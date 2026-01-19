@@ -1,26 +1,26 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Login } from './componets/login';
-import { ForgotPassword } from './componets/forgotPassword';
-import { ResetPassword } from './componets/resetPassword';
-import { Dashboard } from './componets/dashboard';
+import { useEffect, useState } from 'react';
+import { supabase } from './lib/supabase';
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Auth routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+  const [ok, setOk] = useState<'pending'|'ok'|'fail'>('pending');
+  const [err, setErr] = useState<string | null>(null);
 
-        {/* Skyddad vy – vi gör en enkel placeholder nu */}
-        <Route path="/dashboard" element={<Dashboard />} />
+  useEffect(() => {
+    (async () => {
+      try {
+        // Ett oskyldigt "ping": fråga auth-klienten om session
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setOk('ok');
+      } catch (e:any) {
+        setErr(e.message);
+        setOk('fail');
+      }
+    })();
+  }, []);
 
-        {/* Default: skicka till /login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  if (ok === 'pending') return <p>Kontrollerar koppling till Supabase…</p>;
+  if (ok === 'fail') return <p className="text-red-600">Koppling misslyckades: {err}</p>;
+  return <p className="text-green-700">Supabase är kopplat! ✨</p>;
 }
-
