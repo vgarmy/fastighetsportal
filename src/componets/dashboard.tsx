@@ -1,6 +1,6 @@
 import { useUser } from './userContext';
 import { useNavigate, Outlet } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../frontend/lib/supabase';
 
 export function Dashboard() {
   const { user, setUser } = useUser();
