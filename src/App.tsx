@@ -10,7 +10,7 @@ export default function App() {
     (async () => {
       try {
         // Ett oskyldigt "ping": fråga auth-klienten om session
-        const { data, error } = await supabase.auth.getSession();
+        const { error } = await supabase.auth.getSession();
         if (error) throw error;
         setOk('ok');
       } catch (e:any) {
