@@ -1,11 +1,12 @@
-
-
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom'; // om du använder TanStack Router, byt hook
+import { useNavigate } from 'react-router-dom';
+import { useUser } from './userContext';
 
 export function Login() {
-  const navigate = useNavigate(); // eller ersätt med din router-navigering
+  const navigate = useNavigate();
+  const { setUser } = useUser();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -17,16 +18,30 @@ export function Login() {
     setErr(null);
     setLoading(true);
     try {
+      // Logga in via Supabase auth
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // Inloggad – navigera till din dashboard/startsida
+
+      // Hämta användarens data från fastighets_users
+      const { data, error: userError } = await supabase
+        .from('fastighets_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if (userError) throw userError;
+
+      // Spara i context
+      setUser(data);
+
       navigate('/dashboard');
+
     } catch (e: any) {
       setErr(e?.message ?? 'Kunde inte logga in.');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div
