@@ -1,6 +1,6 @@
 import { useUser } from './userContext';
 import { useNavigate, Outlet } from 'react-router-dom';
-import { supabase } from '../../frontend/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export function Dashboard() {
   const { user, setUser } = useUser();
@@ -31,7 +31,7 @@ export function Dashboard() {
           {user.roll === 'superadmin' && (
             <>
               <button
-                onClick={() => navigate('/dashboard/create-user')}
+                onClick={() => navigate('/dashboard/createuser')}
                 className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
               >
                 Create user

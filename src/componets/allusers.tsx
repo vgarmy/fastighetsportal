@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../frontend/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 type DbUser = {
     id: string;

@@ -5,7 +5,7 @@ import { ResetPassword } from './componets/resetPassword';
 import { Dashboard } from './componets/dashboard';
 import { UserProvider } from './componets/userContext'; // <- importera din context
 import { AllUsers } from './componets/allusers';
-import CreateUser from './componets/creatuser';
+import CreateUser from './componets/createuser';
 
 
 export default function App() {
@@ -21,7 +21,7 @@ export default function App() {
             <Route index element={<div>Welcome</div>} />
             <Route path="users" element={<AllUsers />} />
             <Route path="me" element={<div>My details</div>} />
-            <Route path="create-user" element={<CreateUser />} />
+            <Route path="createuser" element={<CreateUser />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
