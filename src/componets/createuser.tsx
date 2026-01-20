@@ -1,149 +1,146 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase'; // frontend-klienten
-import { useUser } from './userContext';
+import { supabase } from '../lib/supabase';
 
-interface CreateUserForm {
-    fornamn: string;
-    efternamn: string;
-    email: string;
-    password: string;
-    adress?: string;
-    roll: 'user' | 'admin' | 'superadmin';
+interface CreateUserProps {
+  onUserCreated?: (newUser: any) => void;
 }
 
-export default function CreateUser() {
-    const { setUser } = useUser();
-    const navigate = useNavigate();
+export function CreateUser({ onUserCreated }: CreateUserProps) {
+  const [fornamn, setFornamn] = useState('');
+  const [efternamn, setEfternamn] = useState('');
+  const [email, setEmail] = useState('');
+  const [adress, setAdress] = useState('');
+  const [losen, setLosen] = useState('');
+  const [roll, setRoll] = useState<'superadmin' | 'admin' | 'user'>('user');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const [form, setForm] = useState<CreateUserForm>({
-        fornamn: '',
-        efternamn: '',
-        email: '',
-        password: '',
-        adress: '',
-        roll: 'user',
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        try {
-            const res = await fetch('/api/createuser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.error || 'Något gick fel');
-
-            // Direkt login med frontend Supabase
-            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                email: form.email,
-                password: form.password,
-            });
-
-            if (loginError) throw new Error(loginError.message);
-
-            setUser({
-                id: loginData.user.id, // måste vara string i User-typen!
-                fornamn: form.fornamn,
-                efternamn: form.efternamn,
-                email: form.email,
-                adress: form.adress,
-                roll: form.roll,
-            });
-
-            navigate('/dashboard');
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+    try {
+      // 1️⃣ Skapa användare i Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: losen,
+        options: {
+          data: {
+            fornamn,
+            efternamn,
+            roll,
+            adress
+          }
         }
-    };
+      });
 
-    return (
-        <div className="max-w-md mx-auto mt-12 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
-            <h2 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-                Skapa ny användare
-            </h2>
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Användaren kunde inte skapas');
 
-            {error && <p className="text-red-600 mb-6 text-center font-medium">{error}</p>}
+      const userId = authData.user.id;
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <input
-                    name="fornamn"
-                    placeholder="Förnamn"
-                    value={form.fornamn}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900 placeholder-gray-400"
-                    required
-                />
-                <input
-                    name="efternamn"
-                    placeholder="Efternamn"
-                    value={form.efternamn}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900 placeholder-gray-400"
-                    required
-                />
-                <input
-                    name="email"
-                    type="email"
-                    placeholder="E-post"
-                    value={form.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900 placeholder-gray-400"
-                    required
-                />
-                <input
-                    name="password"
-                    type="password"
-                    placeholder="Lösenord"
-                    value={form.password}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900 placeholder-gray-400"
-                    required
-                />
-                <input
-                    name="adress"
-                    placeholder="Adress"
-                    value={form.adress}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900 placeholder-gray-400"
-                />
-                <select
-                    name="roll"
-                    value={form.roll}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 text-gray-900"
-                >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                    <option value="superadmin">Superadmin</option>
-                </select>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {loading ? 'Skapar...' : 'Skapa användare'}
-                </button>
-            </form>
-        </div>
-    );
+      // 2️⃣ Spara användaren i tabellen fastighets_users
+      const { data, error: dbError } = await supabase
+        .from('fastighets_users')
+        .insert([
+          {
+            id: userId, // koppla Auth ID
+            fornamn,
+            efternamn,
+            email,
+            losen,
+            adress,
+            roll
+          }
+        ]);
+
+      if (dbError) throw dbError;
+
+      // 3️⃣ Rensa formuläret
+      setFornamn('');
+      setEfternamn('');
+      setEmail('');
+      setAdress('');
+      setLosen('');
+      setRoll('user');
+
+      if (onUserCreated && data) onUserCreated(data[0]);
+      alert('Användare skapad! Nu kan användaren logga in.');
+    } catch (err: any) {
+      setError(err.message || 'Något gick fel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="p-6 bg-gray-100 rounded-xl shadow-lg border border-gray-300 mb-6 max-w-md mx-auto"
+    >
+      <h2 className="font-semibold text-gray-900 text-lg mb-4">Skapa ny användare</h2>
+
+      {error && <div className="text-red-600 mb-3 font-medium">{error}</div>}
+
+      <div className="grid gap-4">
+        <input
+          type="text"
+          placeholder="Förnamn"
+          value={fornamn}
+          onChange={(e) => setFornamn(e.target.value)}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Efternamn"
+          value={efternamn}
+          onChange={(e) => setEfternamn(e.target.value)}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <input
+          type="email"
+          placeholder="E-post"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Lösenord"
+          value={losen}
+          onChange={(e) => setLosen(e.target.value)}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Adress"
+          value={adress}
+          onChange={(e) => setAdress(e.target.value)}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <select
+          value={roll}
+          onChange={(e) => setRoll(e.target.value as 'superadmin' | 'admin' | 'user')}
+          className="p-3 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="superadmin">Superadmin</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-3 rounded-md shadow-md hover:bg-blue-700 transition font-semibold"
+        >
+          {loading ? 'Skapar...' : 'Skapa användare'}
+        </button>
+      </div>
+    </form>
+  );
 }

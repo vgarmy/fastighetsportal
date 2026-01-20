@@ -31,16 +31,16 @@ export function Dashboard() {
           {user.roll === 'superadmin' && (
             <>
               <button
-                onClick={() => navigate('/dashboard/createuser')}
+                onClick={() => navigate('/dashboard/create-user')}
                 className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
               >
-                Create user
+                Skapa användare
               </button>
               <button
                 onClick={() => navigate('/dashboard/users')}
                 className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
               >
-                All users
+                Alla användare
               </button>
             </>
           )}
@@ -50,7 +50,7 @@ export function Dashboard() {
               onClick={() => navigate('/dashboard/me')}
               className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
             >
-              My details
+              Mina uppgifter
             </button>
           )}
         </nav>
@@ -73,13 +73,22 @@ export function Dashboard() {
         <div className="p-6 bg-white rounded-xl shadow-sm mb-8 border border-slate-200">
           <h2 className="font-semibold text-slate-800 mb-3">Din information</h2>
           <div className="space-y-1 text-slate-700">
-            <p><span className="font-medium text-slate-900">Förnamn:</span> {user.fornamn}</p>
-            <p><span className="font-medium text-slate-900">Efternamn:</span> {user.efternamn}</p>
-            <p><span className="font-medium text-slate-900">E-post:</span> {user.email}</p>
-            <p><span className="font-medium text-slate-900">Adress:</span> {user.adress ?? '-'}</p>
+            <p>
+              <span className="font-medium text-slate-900">Förnamn:</span> {user.fornamn}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Efternamn:</span> {user.efternamn}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">E-post:</span> {user.email}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Adress:</span> {user.adress ?? '-'}
+            </p>
           </div>
         </div>
 
+        {/* Superadmin panel */}
         {user.roll === 'superadmin' && (
           <div className="p-5 bg-red-50 border border-red-200 rounded-xl mb-4">
             <h2 className="font-semibold text-red-800">Superadmin-panel</h2>
@@ -87,6 +96,7 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* Admin panel */}
         {user.roll === 'admin' && (
           <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl mb-4">
             <h2 className="font-semibold text-blue-800">Admin-panel</h2>
@@ -94,6 +104,7 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* User panel */}
         {user.roll === 'user' && (
           <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl mb-4">
             <h2 className="font-semibold text-emerald-800">Vanlig användare</h2>
@@ -101,6 +112,7 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* Outlet för under-routes, tex CreateUser eller AllUsers */}
         <Outlet />
       </main>
     </div>

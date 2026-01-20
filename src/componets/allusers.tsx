@@ -1,75 +1,98 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 type DbUser = {
-    id: string;
-    fornamn: string;
-    efternamn: string;
-    email: string;
-    adress: string | null;
-    roll: 'superadmin' | 'admin' | 'user';
+  id: string;
+  fornamn: string;
+  efternamn: string;
+  email: string;
+  adress: string | null;
+  roll: 'superadmin' | 'admin' | 'user';
 };
 
-export function AllUsers() {
-    const [users, setUsers] = useState<DbUser[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+interface AllUsersProps {
+  users?: DbUser[];
+  setUsers?: React.Dispatch<React.SetStateAction<DbUser[]>>;
+}
 
-    useEffect(() => {
-        const loadUsers = async () => {
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('fastighets_users')
-                .select('*')
-                .order('efternamn', { ascending: true });
+export function AllUsers({ users: propUsers, setUsers: propSetUsers }: AllUsersProps) {
+  const [users, setUsers] = useState<DbUser[]>(propUsers ?? []);
+  const [loading, setLoading] = useState(!propUsers);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-            if (error) {
-                setError(error.message);
-            } else {
-                setUsers(data ?? []);
-            }
-            setLoading(false);
-        };
+  useEffect(() => {
+    // Om props skickas, behöver vi inte ladda från Supabase
+    if (propUsers) return;
 
-        loadUsers();
-    }, []);
+    const loadUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('fastighets_users')
+        .select('*')
+        .order('efternamn', { ascending: true });
 
-    if (loading) return <div className="p-6">Laddar användare…</div>;
-    if (error) return <div className="p-6 text-red-600">{error}</div>;
+      if (error) {
+        setError(error.message);
+      } else {
+        setUsers(data ?? []);
+        // Om setUsers-prop finns, uppdatera den också
+        propSetUsers?.(data ?? []);
+      }
+      setLoading(false);
+    };
 
-    return (
-        <div>
-            <h1 className="text-2xl font-bold mb-4">Alla användare</h1>
+    loadUsers();
+  }, [propUsers, propSetUsers]);
 
-            <div className="overflow-x-auto bg-white rounded shadow">
-                <table className="min-w-full text-sm border border-gray-300">
-                    <thead className="bg-gray-200 border-b border-gray-300">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-gray-700">Förnamn</th>
-                            <th className="text-left px-4 py-3 text-gray-700">Efternamn</th>
-                            <th className="text-left px-4 py-3 text-gray-700">E-post</th>
-                            <th className="text-left px-4 py-3 text-gray-700">Adress</th>
-                            <th className="text-left px-4 py-3 text-gray-700">Roll</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((u, index) => (
-                            <tr
-                                key={u.id}
-                                className={`border-b last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                    }`}
-                            >
-                                <td className="px-4 py-2 text-gray-800">{u.fornamn}</td>
-                                <td className="px-4 py-2 text-gray-800">{u.efternamn}</td>
-                                <td className="px-4 py-2 text-gray-800">{u.email}</td>
-                                <td className="px-4 py-2 text-gray-800">{u.adress ?? '-'}</td>
-                                <td className="px-4 py-2 text-gray-800 capitalize">{u.roll}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+  if (loading) return <div className="p-6">Laddar användare…</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
-            </div>
-        </div>
-    );
+  const displayedUsers = propUsers ?? users;
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Alla användare</h1>
+
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full text-sm border border-gray-300">
+          <thead className="bg-gray-200 border-b border-gray-300">
+            <tr>
+              <th className="text-left px-4 py-3 text-gray-700">Förnamn</th>
+              <th className="text-left px-4 py-3 text-gray-700">Efternamn</th>
+              <th className="text-left px-4 py-3 text-gray-700">E-post</th>
+              <th className="text-left px-4 py-3 text-gray-700">Adress</th>
+              <th className="text-left px-4 py-3 text-gray-700">Roll</th>
+              <th className="text-left px-4 py-3 text-gray-700">Åtgärder</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedUsers.map((u, index) => (
+              <tr
+                key={u.id}
+                className={`border-b last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  }`}
+              >
+                <td className="px-4 py-2 text-gray-800">{u.fornamn}</td>
+                <td className="px-4 py-2 text-gray-800">{u.efternamn}</td>
+                <td className="px-4 py-2 text-gray-800">{u.email}</td>
+                <td className="px-4 py-2 text-gray-800">{u.adress ?? '-'}</td>
+                <td className="px-4 py-2 text-gray-800 capitalize">{u.roll}</td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => navigate(`/dashboard/users/${u.id}`)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  >
+                    Detaljer
+                  </button>
+                </td>
+
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
