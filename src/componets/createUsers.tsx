@@ -5,6 +5,7 @@ interface CreateUserProps {
   onUserCreated?: (newUser: any) => void;
 }
 
+
 export function CreateUser({ onUserCreated }: CreateUserProps) {
   const [fornamn, setFornamn] = useState('');
   const [efternamn, setEfternamn] = useState('');
