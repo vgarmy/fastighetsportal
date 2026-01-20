@@ -7,6 +7,11 @@ import { UserProvider } from './componets/userContext';
 import { AllUsers } from './componets/allusers';
 import { CreateUser } from './componets/createUser';
 import { UserDetail } from './componets/userDetails';
+import { FastighetForm } from './fastigheter/fastighetsForm';
+import { FastighetSkotareForm } from './fastigheter/fastighetSkotarForm';
+import { VisaFastigheter } from './fastigheter/visaFastigheter';
+import { FastighetDetaljer } from './fastigheter/fastighetsDetaljer';
+
 
 export default function App() {
   return (
@@ -26,6 +31,12 @@ export default function App() {
             <Route path="create-user" element={<CreateUser onUserCreated={() => { }} />} />
             <Route path="users" element={<AllUsers />} />
             <Route path="users/:id" element={<UserDetail />} />   {/* detaljvy */}
+
+            {/* Fastigheter */}
+            <Route path="fastigheter" element={<VisaFastigheter />} />
+            <Route path="fastigheter/:id" element={<FastighetDetaljer />} />
+            <Route path="fastighet/create" element={<FastighetForm />} />
+            <Route path="fastighet/skotarform" element={<FastighetSkotareForm />} />
 
             {/* Andra routes */}
             <Route path="me" element={<div>My details</div>} />

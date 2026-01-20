@@ -42,16 +42,54 @@ export function Dashboard() {
               >
                 Alla användare
               </button>
+              <button
+                onClick={() => navigate('/dashboard/fastighet/create')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Skapa Fastighet
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastighet/skotarform')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Tilldela Fastighetskötare
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastigheter')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Visa fastigheter
+              </button>
             </>
           )}
 
           {(user.roll === 'admin' || user.roll === 'user') && (
-            <button
-              onClick={() => navigate('/dashboard/me')}
-              className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
-            >
-              Mina uppgifter
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/dashboard/me')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Mina uppgifter
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastighet/create')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Skapa Fastighet
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastighet/skotarform')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Tilldela Fastighetskötare
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastigheter')}
+                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+              >
+                Visa fastigheter
+              </button>
+            </>
           )}
         </nav>
 
