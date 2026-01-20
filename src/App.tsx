@@ -28,7 +28,7 @@ export default function App() {
             <Route index element={<div className="p-6">Välkommen till dashboarden!</div>} />
 
             {/* Superadmin-routes */}
-            <Route path="create-user" element={<CreateUser onUserCreated={() => { }} />} />
+            <Route path="createuser" element={<CreateUser onUserCreated={() => { }} />} />
             <Route path="users" element={<AllUsers />} />
             <Route path="users/:id" element={<UserDetail />} />   {/* detaljvy */}
 
