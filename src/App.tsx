@@ -5,7 +5,7 @@ import { ResetPassword } from './componets/resetPassword';
 import { Dashboard } from './componets/dashboard';
 import { UserProvider } from './componets/userContext';
 import { AllUsers } from './componets/allusers';
-import { CreateUser } from './componets/createUser';
+import { CreateUser } from './componets/createUsers';
 import { UserDetail } from './componets/userDetails';
 import { FastighetForm } from './fastigheter/fastighetsForm';
 import { FastighetSkotareForm } from './fastigheter/fastighetSkotarForm';
