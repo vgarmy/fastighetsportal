@@ -1,6 +1,16 @@
 import { useUser } from './userContext';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import {
+  User,
+  Users,
+  Building2,
+  Home,
+  PlusCircle,
+  Wrench,
+  LogOut,
+} from 'lucide-react'
+
 
 export function Dashboard() {
   const { user, setUser } = useUser();
@@ -17,7 +27,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen flex bg-slate-100">
       {/* Left navigation */}
-      <aside className="w-64 bg-slate-900 text-slate-100 p-4 flex flex-col shadow-xl">
+      <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4 flex flex-col shadow-2xl">
         <div className="mb-8">
           <div className="text-lg font-semibold tracking-tight">
             {user.fornamn} {user.efternamn}
@@ -32,33 +42,58 @@ export function Dashboard() {
             <>
               <button
                 onClick={() => navigate('/dashboard/createuser')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <Users size={18} />
                 Skapa användare
               </button>
+
               <button
                 onClick={() => navigate('/dashboard/users')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <User size={18} />
                 Alla användare
               </button>
+
               <button
                 onClick={() => navigate('/dashboard/fastighet/create')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <PlusCircle size={18} />
                 Skapa Fastighet
               </button>
+
               <button
                 onClick={() => navigate('/dashboard/fastighet/skotarform')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <Wrench size={18} />
                 Tilldela Fastighetskötare
               </button>
+
               <button
                 onClick={() => navigate('/dashboard/fastigheter')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <Home size={18} />
                 Visa fastigheter
+              </button>
+
+              <button
+                onClick={() => navigate('/dashboard/byggnader/create')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <PlusCircle size={18} />
+                Skapa byggnader
+              </button>
+
+              <button
+                onClick={() => navigate('/dashboard/byggnader')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa byggnader
               </button>
             </>
           )}
@@ -67,27 +102,34 @@ export function Dashboard() {
             <>
               <button
                 onClick={() => navigate('/dashboard/me')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <User size={18} />
                 Mina uppgifter
               </button>
+
               <button
                 onClick={() => navigate('/dashboard/fastighet/create')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <PlusCircle size={18} />
                 Skapa Fastighet
               </button>
-              <button
-                onClick={() => navigate('/dashboard/fastighet/skotarform')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
-              >
-                Tilldela Fastighetskötare
-              </button>
+
               <button
                 onClick={() => navigate('/dashboard/fastigheter')}
-                className="w-full text-left px-3 py-2 rounded-md text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
+                <Home size={18} />
                 Visa fastigheter
+              </button>
+
+              <button
+                onClick={() => navigate('/dashboard/byggnader')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa byggnader
               </button>
             </>
           )}
@@ -95,8 +137,9 @@ export function Dashboard() {
 
         <button
           onClick={handleLogout}
-          className="mt-4 w-full px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+          className="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
         >
+          <LogOut size={18} />
           Logga ut
         </button>
       </aside>
@@ -124,31 +167,32 @@ export function Dashboard() {
               <span className="font-medium text-slate-900">Adress:</span> {user.adress ?? '-'}
             </p>
           </div>
+
+          {/* Superadmin panel */}
+          {user.roll === 'superadmin' && (
+            <div className="p-5 bg-red-50 border border-red-200 rounded-xl mb-4">
+              <h2 className="font-semibold text-red-800">Superadmin-panel</h2>
+              <p className="text-red-700">Här kan du se allt och hantera användare.</p>
+            </div>
+          )}
+
+          {/* Admin panel */}
+          {user.roll === 'admin' && (
+            <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl mb-4">
+              <h2 className="font-semibold text-blue-800">Admin-panel</h2>
+              <p className="text-blue-700">Här kan du hantera vissa delar av systemet.</p>
+            </div>
+          )}
+
+          {/* User panel */}
+          {user.roll === 'user' && (
+            <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl mb-4">
+              <h2 className="font-semibold text-emerald-800">Vanlig användare</h2>
+              <p className="text-emerald-700">Du har begränsad åtkomst.</p>
+            </div>
+          )}
         </div>
 
-        {/* Superadmin panel */}
-        {user.roll === 'superadmin' && (
-          <div className="p-5 bg-red-50 border border-red-200 rounded-xl mb-4">
-            <h2 className="font-semibold text-red-800">Superadmin-panel</h2>
-            <p className="text-red-700">Här kan du se allt och hantera användare.</p>
-          </div>
-        )}
-
-        {/* Admin panel */}
-        {user.roll === 'admin' && (
-          <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl mb-4">
-            <h2 className="font-semibold text-blue-800">Admin-panel</h2>
-            <p className="text-blue-700">Här kan du hantera vissa delar av systemet.</p>
-          </div>
-        )}
-
-        {/* User panel */}
-        {user.roll === 'user' && (
-          <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl mb-4">
-            <h2 className="font-semibold text-emerald-800">Vanlig användare</h2>
-            <p className="text-emerald-700">Du har begränsad åtkomst.</p>
-          </div>
-        )}
 
         {/* Outlet för under-routes, tex CreateUser eller AllUsers */}
         <Outlet />

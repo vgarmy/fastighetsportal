@@ -11,6 +11,9 @@ import { FastighetForm } from './fastigheter/fastighetsForm';
 import { FastighetSkotareForm } from './fastigheter/fastighetSkotarForm';
 import { VisaFastigheter } from './fastigheter/visaFastigheter';
 import { FastighetDetaljer } from './fastigheter/fastighetsDetaljer';
+import { ByggnadForm } from './byggnader/byggnadsForm';
+import { ByggnadSkotareForm } from './byggnader/byggnadsSkotareForm';
+import { VisaByggnader } from './byggnader/visaByggnader';
 
 
 export default function App() {
@@ -37,6 +40,11 @@ export default function App() {
             <Route path="fastigheter/:id" element={<FastighetDetaljer />} />
             <Route path="fastighet/create" element={<FastighetForm />} />
             <Route path="fastighet/skotarform" element={<FastighetSkotareForm />} />
+
+            {/* Byggnader */}
+            <Route path="byggnader/create" element={<ByggnadForm />} />
+            <Route path="byggnader/skotarform" element={<ByggnadSkotareForm />} />
+            <Route path="byggnader" element={<VisaByggnader />} />
 
             {/* Andra routes */}
             <Route path="me" element={<div>My details</div>} />
