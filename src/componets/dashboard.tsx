@@ -20,7 +20,7 @@ export function Dashboard() {
     <div className="min-h-screen flex bg-slate-100">
 
       {/* Left navigation */}
-      <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4 flex flex-col shadow-2xl">
+      <aside className="w-68 bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4 flex flex-col shadow-2xl">
         <div className="mb-8">
           <div className="text-lg font-semibold tracking-tight">
             {user.fornamn} {user.efternamn}
@@ -82,12 +82,40 @@ export function Dashboard() {
               </button>
 
               <button
+                onClick={() => navigate('/dashboard/byggnader/skotarform')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Wrench size={18} />Tilldela Byggnadsskötare
+              </button>
+
+              <button
                 onClick={() => navigate('/dashboard/byggnader')}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
                 <Building2 size={18} />
                 Visa byggnader
               </button>
+              <button
+                onClick={() => navigate('/dashboard/objekt/create')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <PlusCircle size={18} />
+                Skapa Objekt
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/objekt/skotarform')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Wrench size={18} />Tilldela Skötare
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/objekt')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa objekt
+              </button>
+
             </>
           )}
 
@@ -123,6 +151,13 @@ export function Dashboard() {
               >
                 <Building2 size={18} />
                 Visa byggnader
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/objekt/create')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <PlusCircle size={18} />
+                Skapa Objekt
               </button>
             </>
           )}
@@ -212,7 +247,7 @@ export function Dashboard() {
         <div className='relative mt-10'>
           <Outlet />
         </div>
-       
+
       </main>
     </div>
   );

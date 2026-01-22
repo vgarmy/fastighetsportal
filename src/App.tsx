@@ -14,6 +14,10 @@ import { FastighetDetaljer } from './fastigheter/fastighetsDetaljer';
 import { ByggnadForm } from './byggnader/byggnadsForm';
 import { ByggnadSkotareForm } from './byggnader/byggnadsSkotareForm';
 import { VisaByggnader } from './byggnader/visaByggnader';
+import { ByggnadsObjektForm } from './objekt/objektForm';
+import { ObjektSkotareForm } from './objekt/objektSkotareForm';
+import { VisaByggnadsobjekt } from './objekt/visaObjekt';
+import { ObjektDetaljer } from './objekt/objektDetaljer';
 
 
 export default function App() {
@@ -45,6 +49,12 @@ export default function App() {
             <Route path="byggnader/create" element={<ByggnadForm />} />
             <Route path="byggnader/skotarform" element={<ByggnadSkotareForm />} />
             <Route path="byggnader" element={<VisaByggnader />} />
+
+            {/* Objekt */}
+            <Route path="objekt/create" element={<ByggnadsObjektForm />} />
+            <Route path="objekt/skotarform" element={<ObjektSkotareForm />} />
+            <Route path="objekt" element={<VisaByggnadsobjekt />} />
+            <Route path="objekt/:id" element={<ObjektDetaljer />} />
 
             {/* Andra routes */}
             <Route path="me" element={<div>My details</div>} />
