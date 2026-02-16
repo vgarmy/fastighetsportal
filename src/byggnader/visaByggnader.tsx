@@ -86,11 +86,11 @@ export function VisaByggnader() {
     loadByggnader();
   }, []);
 
-  if (loading) return <div className="p-6 text-gray-700">Laddar byggnader…</div>;
-  if (error) return <div className="p-6 text-red-600">{error}</div>;
+  if (loading) return <div className="text-gray-700">Laddar byggnader…</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Alla byggnader</h1>
         {/* Snabbknapp — går till formulär utan förvald fastighet */}

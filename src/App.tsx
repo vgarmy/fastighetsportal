@@ -18,6 +18,11 @@ import { ByggnadsObjektForm } from './objekt/objektForm';
 import { ObjektSkotareForm } from './objekt/objektSkotareForm';
 import { VisaByggnadsobjekt } from './objekt/visaObjekt';
 import { ObjektDetaljer } from './objekt/objektDetaljer';
+import { ByggnadDetaljer } from './byggnader/byggnaderDetaljer';
+import { SkapaUnderhall } from './underhall/skapaUnderhall';
+import { UnderhallLista } from './underhall/visaUnderhall';
+import { UserSettings } from './componets/userSettings';
+import { UnderhallDetalj } from './underhall/underhallDetaljer';
 
 
 export default function App() {
@@ -33,6 +38,7 @@ export default function App() {
           {/* Protected dashboard */}
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<div className="p-6">Välkommen till dashboarden!</div>} />
+          
 
             {/* Superadmin-routes */}
             <Route path="createuser" element={<CreateUser onUserCreated={() => { }} />} />
@@ -49,6 +55,7 @@ export default function App() {
             <Route path="byggnader/create" element={<ByggnadForm />} />
             <Route path="byggnader/skotarform" element={<ByggnadSkotareForm />} />
             <Route path="byggnader" element={<VisaByggnader />} />
+            <Route path="byggnader/:id" element={<ByggnadDetaljer />} />
 
             {/* Objekt */}
             <Route path="objekt/create" element={<ByggnadsObjektForm />} />
@@ -56,11 +63,17 @@ export default function App() {
             <Route path="objekt" element={<VisaByggnadsobjekt />} />
             <Route path="objekt/:id" element={<ObjektDetaljer />} />
 
+            <Route path="underhall/create" element={<SkapaUnderhall />} />
+            <Route path="underhall" element={<UnderhallLista />} />
+            <Route path="underhall/:id" element={<UnderhallDetalj />} />
+
             {/* Andra routes */}
             <Route path="me" element={<div>My details</div>} />
+            <Route path="/dashboard/settings" element={<UserSettings />}>
           </Route>
 
           {/* Fallback */}
+         </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

@@ -180,7 +180,7 @@ export function ObjektDetaljer() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="w-full h-24 rounded-xl bg-gray-200 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
@@ -193,7 +193,7 @@ export function ObjektDetaljer() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div>
         <div className="text-red-600 font-medium">{error}</div>
       </div>
     );
@@ -201,7 +201,7 @@ export function ObjektDetaljer() {
 
   if (!objekt) {
     return (
-      <div className="p-6">
+      <div>
         <div className="text-gray-700">Objektet kunde inte hittas.</div>
       </div>
     );
@@ -216,7 +216,7 @@ export function ObjektDetaljer() {
   const byggLabel = objekt.byggnader?.namn || 'Namnlös byggnad';
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="rounded-2xl border border-gray-200 shadow-sm bg-white px-5 py-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">

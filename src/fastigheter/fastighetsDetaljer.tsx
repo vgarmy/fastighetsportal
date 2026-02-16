@@ -145,14 +145,14 @@ export function FastighetDetaljer() {
 
   if (!fastighet) {
     return (
-      <div className="p-6">
+      <div>
         <div className="text-gray-700">Fastigheten kunde inte hittas.</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8">
       {/* Header med bild */}
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
         <div className="w-full h-[220px] bg-gray-100">

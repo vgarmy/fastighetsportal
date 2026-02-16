@@ -1,8 +1,9 @@
 import { useUser } from './userContext';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { User, Users, Building2, Home, PlusCircle, Wrench, LogOut, Mail, MapPin, Shield, Settings, Star } from 'lucide-react'
-
+import { User, Users, Building2, Home, PlusCircle, Wrench, LogOut, Settings } from 'lucide-react'
+import { BigActionCard } from './superadmin/bigActionCard';
+import { WeeklyUnderhall } from "./superadmin/weeklyUnderhallTable";
 
 export function Dashboard() {
   const { user, setUser } = useUser();
@@ -15,6 +16,8 @@ export function Dashboard() {
     setUser(null);
     navigate('/login');
   };
+
+  const isSuperAdmin = user.roll === 'superadmin'; // behåller ditt fält "rol
 
   return (
     <div className="min-h-screen flex bg-slate-100">
@@ -33,6 +36,13 @@ export function Dashboard() {
         <nav className="flex-1 space-y-1">
           {user.roll === 'superadmin' && (
             <>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Users size={18} />
+                Dashboard
+              </button>
               <button
                 onClick={() => navigate('/dashboard/createuser')}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
@@ -115,11 +125,25 @@ export function Dashboard() {
                 <Building2 size={18} />
                 Visa objekt
               </button>
+              <button
+                onClick={() => navigate('/dashboard/underhall/create')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Skapa Underhåll
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/underhall')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa Underhåll
+              </button>
 
             </>
           )}
 
-          {(user.roll === 'admin' || user.roll === 'user') && (
+          {user.roll === 'admin' && (
             <>
               <button
                 onClick={() => navigate('/dashboard/me')}
@@ -161,11 +185,60 @@ export function Dashboard() {
               </button>
             </>
           )}
+          {user.roll === 'user' && (
+            <>
+              <button
+                onClick={() => navigate('/dashboard/me')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <User size={18} />
+                Mina uppgifter
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/fastigheter')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Home size={18} />
+                Visa fastigheter
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/byggnader')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa byggnader
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/objekt')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa objekt
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/underhall')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              >
+                <Building2 size={18} />
+                Visa Underhåll
+              </button>
+
+            </>
+          )}
         </nav>
+
+
+        <button
+          onClick={() => navigate('/dashboard/settings')}
+          className="w-full flex items-center gap-3 px-3 py-2 mt-4 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+        >
+          <Settings size={18} />
+          Inställningar
+        </button>
 
         <button
           onClick={handleLogout}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2 mt-4 rounded-md bg-red-600 text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
         >
           <LogOut size={18} />
           Logga ut
@@ -185,62 +258,62 @@ export function Dashboard() {
           Välkommen, {user.fornamn}!
         </h1>
 
-        {/* User info */}
-        <div className="p-6 bg-white rounded-2xl shadow-md border border-slate-200 space-y-6 relative">
-          <h2 className="font-semibold text-slate-800 text-xl flex items-center gap-2">
-            <User size={20} /> Din information
-          </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-700">
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-slate-400" />
-              <span className="font-medium text-slate-900">Förnamn:</span> {user.fornamn}
+        {/* === NY: Hero-grid för superadmin === */}
+        {isSuperAdmin && location.pathname === '/dashboard' && (
+          <section className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <BigActionCard
+                title="Fastigheter"
+                description="Lägg till, tilldela och hantera fastigheter."
+                theme="indigo"
+                icon={<Home className="w-8 h-8 text-indigo-600" />}
+                onClick={() => navigate('/dashboard/fastighet/create')}
+              />
+
+              <BigActionCard
+                title="Byggnader"
+                description="Skapa och tilldela byggnadsskötare."
+                theme="emerald"
+                icon={<Building2 className="w-8 h-8 text-emerald-600" />}
+                onClick={() => navigate('/dashboard/byggnader/create')}
+              />
+
+              <BigActionCard
+                title="Objekt"
+                description="Lägg till objekt och tilldela skötare."
+                theme="amber"
+                icon={<PlusCircle className="w-8 h-8 text-amber-600" />}
+                onClick={() => navigate('/dashboard/objekt/create')}
+              />
+
+              <BigActionCard
+                title="Användare"
+                description="Skapa och administrera användare och roller."
+                theme="sky"
+                icon={<Users className="w-8 h-8 text-sky-600" />}
+                onClick={() => navigate('/dashboard/createuser')}
+              />
+
+              <BigActionCard
+                title="Underhåll"
+                description="Planera och följ upp underhåll."
+                theme="rose"
+                icon={<Wrench className="w-8 h-8 text-rose-600" />}
+                onClick={() => navigate('/dashboard/underhall/create')}
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-slate-400" />
-              <span className="font-medium text-slate-900">Efternamn:</span> {user.efternamn}
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="w-5 h-5 text-slate-400" />
-              <span className="font-medium text-slate-900">E-post:</span> {user.email}
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-slate-400" />
-              <span className="font-medium text-slate-900">Adress:</span> {user.adress ?? '-'}
-            </div>
+          </section>
+        )}
+
+
+        {isSuperAdmin && location.pathname === "/dashboard" && (
+          <section className="relative">
+          <div className="mt-12">
+            <WeeklyUnderhall />
           </div>
-
-          {/* Panels beroende på roll */}
-          {user.roll === 'superadmin' && (
-            <div className="p-5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-              <Shield className="w-6 h-6 text-red-400 mt-1" />
-              <div>
-                <h3 className="font-semibold text-red-800">Superadmin-panel</h3>
-                <p className="text-red-700 text-sm">Här kan du se allt och hantera användare.</p>
-              </div>
-            </div>
-          )}
-
-          {user.roll === 'admin' && (
-            <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-              <Settings className="w-6 h-6 text-blue-400 mt-1" />
-              <div>
-                <h3 className="font-semibold text-blue-800">Admin-panel</h3>
-                <p className="text-blue-700 text-sm">Här kan du hantera vissa delar av systemet.</p>
-              </div>
-            </div>
-          )}
-
-          {user.roll === 'user' && (
-            <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
-              <Star className="w-6 h-6 text-emerald-400 mt-1" />
-              <div>
-                <h3 className="font-semibold text-emerald-800">Vanlig användare</h3>
-                <p className="text-emerald-700 text-sm">Du har begränsad åtkomst.</p>
-              </div>
-            </div>
-          )}
-        </div>
+          </section>
+        )}
 
 
         {/* Outlet för under-routes, tex CreateUser eller AllUsers */}
