@@ -23,7 +23,7 @@ type NavItemProps = {
   onClick: () => void;
 };
 
-function NavItem({ to, icon, children, active, onClick }: NavItemProps) {
+function NavItem({ icon, children, active, onClick }: NavItemProps) {
   return (
     <button
       onClick={onClick}
