@@ -36,7 +36,7 @@ export function SkapaUnderhall() {
   const [searchParams] = useSearchParams();
 
   // ---- Form state ----
-  const [tab, setTab] = useState<TabKey>('detaljer');
+  const [tab, setTab] = useState<TabKey>('tillhor');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -301,11 +301,25 @@ export function SkapaUnderhall() {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow border border-gray-300">
-        <div className="flex border-b border-gray-300 overflow-x-auto">
-          <TabButton active={tab === 'detaljer'} onClick={() => setTab('detaljer')} label="Detaljer" />
-          <TabButton active={tab === 'tillhor'} onClick={() => setTab('tillhor')} label="Tillhörighet" />
-          <TabButton active={tab === 'skotare'} onClick={() => setTab('skotare')} label="Skötare" />
-        </div>
+<div className="flex border-b border-gray-300 overflow-x-auto rounded-t-xl">
+  <TabButton
+    active={tab === 'tillhor'}
+    onClick={() => setTab('tillhor')}
+    label="Tillhörighet"
+    first
+  />
+  <TabButton
+    active={tab === 'detaljer'}
+    onClick={() => setTab('detaljer')}
+    label="Detaljer"
+  />
+  <TabButton
+    active={tab === 'skotare'}
+    onClick={() => setTab('skotare')}
+    label="Skötare"
+    last
+  />
+</div>
 
         {/* DETALJER */}
         {tab === 'detaljer' && (
@@ -491,17 +505,23 @@ function TabButton({
   active,
   onClick,
   label,
+  first = false,
+  last = false,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  first?: boolean;
+  last?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        'relative px-4 py-3 text-sm whitespace-nowrap border-b-2',
+        'relative px-4 py-3 text-sm whitespace-nowrap border-b-2 transition cursor-pointer',
+        first ? 'rounded-tl-xl' : '',
+        last ? 'rounded-tr-xl' : '',
         active
           ? 'text-blue-900 font-bold border-blue-700 bg-blue-50'
           : 'text-gray-700 hover:text-gray-900 border-transparent hover:bg-gray-100',

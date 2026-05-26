@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -23,11 +22,11 @@ type Fastighet = {
 type Byggnad = {
   id: string;
   namn: string;
-  typ: string; // 'bostad' | 'kontor' | 'lager' | 'garage' | 'annan'
+  typ: string;
   våningar: number | null;
   area: number | null;
   byggår: number | null;
-  skotare: Skotare[]; // ansvariga för byggnaden
+  skotare: Skotare[];
 };
 
 export function FastighetDetaljer() {
@@ -50,8 +49,8 @@ export function FastighetDetaljer() {
     const load = async () => {
       setLoading(true);
       setError(null);
+
       try {
-        // 1) Fastighet
         const { data: f, error: fErr } = await supabase
           .from('fastigheter')
           .select('*')
@@ -60,7 +59,6 @@ export function FastighetDetaljer() {
 
         if (fErr) throw fErr;
 
-        // 2) Fastighetsskötare (join)
         const { data: fsData, error: fsErr } = await supabase
           .from('fastighet_skotare')
           .select('skotare_id(id, fornamn, efternamn, email)')
@@ -72,7 +70,6 @@ export function FastighetDetaljer() {
           .map((row: any) => row.skotare_id)
           .filter(Boolean);
 
-        // 3) Byggnader + deras skötare
         const { data: bData, error: bErr } = await supabase
           .from('byggnader')
           .select(`
@@ -176,7 +173,17 @@ export function FastighetDetaljer() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Info-kort */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Information om fastigheten</h2>
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Information om fastigheten</h2>
+
+            <button
+              onClick={() => navigate(`/dashboard/fastighet/create?id=${fastighet.id}`)}
+              className="text-sm bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 transition"
+            >
+              Redigera
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800">
             <div>
               <div className="text-gray-500 text-sm">Namn</div>
@@ -193,7 +200,11 @@ export function FastighetDetaljer() {
             <div>
               <div className="text-gray-500 text-sm">Typ(er)</div>
               <div className="font-medium">
-                {Array.isArray(fastighet.typ) ? (fastighet.typ.length ? fastighet.typ.join(', ') : '-') : fastighet.typ ?? '-'}
+                {Array.isArray(fastighet.typ)
+                  ? fastighet.typ.length
+                    ? fastighet.typ.join(', ')
+                    : '-'
+                  : fastighet.typ ?? '-'}
               </div>
             </div>
             <div>
@@ -208,7 +219,7 @@ export function FastighetDetaljer() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Fastighetsskötare</h2>
             <button
-              onClick={() => navigate(`/dashboard/tilldela/fastighet-skotare?fastighet=${fastighet.id}`)}
+              onClick={() => navigate(`/dashboard/fastighet/skotarform?fastighet=${fastighet.id}`)}
               className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
             >
               Hantera
@@ -273,7 +284,7 @@ export function FastighetDetaljer() {
                   <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-800">
                     <div>
                       <div className="text-gray-500 text-xs">Våningar</div>
-                      <div className="font-medium">{b['våningar'] ?? '-'}</div>
+                      <div className="font-medium">{b.våningar ?? '-'}</div>
                     </div>
                     <div>
                       <div className="text-gray-500 text-xs">Area (m²)</div>
@@ -281,7 +292,7 @@ export function FastighetDetaljer() {
                     </div>
                     <div>
                       <div className="text-gray-500 text-xs">Byggår</div>
-                      <div className="font-medium">{b['byggår'] ?? '-'}</div>
+                      <div className="font-medium">{b.byggår ?? '-'}</div>
                     </div>
                   </div>
 
@@ -312,7 +323,11 @@ export function FastighetDetaljer() {
                   >
                     Visa byggnadsdetaljer
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a.997.997 0 010 1.414l-5 5a1 1 0 11-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                      <path
+                        fillRule="evenodd"
+                        d="M10.293 3.293a1 1 0 011.414 0l5 5a.997.997 0 010 1.414l-5 5a1 1 0 11-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
                 </div>

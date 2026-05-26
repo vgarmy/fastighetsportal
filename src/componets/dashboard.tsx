@@ -1,13 +1,64 @@
+import type { ReactNode } from 'react';
 import { useUser } from './userContext';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { User, Users, Building2, Home, PlusCircle, Wrench, LogOut, Settings } from 'lucide-react'
+import {
+  User,
+  Users,
+  Building2,
+  Home,
+  PlusCircle,
+  Wrench,
+  LogOut,
+  Settings,
+} from 'lucide-react';
 import { BigActionCard } from './superadmin/bigActionCard';
-import { WeeklyUnderhall } from "./superadmin/weeklyUnderhallTable";
+import { WeeklyUnderhall } from './superadmin/weeklyUnderhallTable';
+
+type NavItemProps = {
+  to: string;
+  icon: ReactNode;
+  children: ReactNode;
+  active: boolean;
+  onClick: () => void;
+};
+
+function NavItem({ to, icon, children, active, onClick }: NavItemProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition cursor-pointer text-left border ${active
+          ? 'bg-slate-800 text-white border-slate-700 shadow-sm'
+          : 'text-slate-300 border-transparent hover:bg-slate-800/70 hover:text-white'
+        }`}
+    >
+      <span className={active ? 'text-cyan-400' : 'text-slate-400'}>{icon}</span>
+      <span className="text-sm font-medium">{children}</span>
+    </button>
+  );
+}
+
+function NavSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {title}
+      </div>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
 
 export function Dashboard() {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!user) return <div className="p-6 text-gray-700">Laddar…</div>;
 
@@ -17,232 +68,313 @@ export function Dashboard() {
     navigate('/login');
   };
 
-  const isSuperAdmin = user.roll === 'superadmin'; // behåller ditt fält "rol
+  const isSuperAdmin = user.roll === 'superadmin';
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <div className="min-h-screen flex bg-slate-100">
-
       {/* Left navigation */}
-      <aside className="w-68 bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4 flex flex-col shadow-2xl">
-        <div className="mb-8">
-          <div className="text-lg font-semibold tracking-tight">
-            {user.fornamn} {user.efternamn}
-          </div>
-          <div className="text-xs uppercase text-slate-400 mt-1">
-            {user.roll}
+      <aside className="w-72 bg-slate-950 text-slate-100 p-4 flex flex-col border-r border-slate-800 shadow-2xl">
+        {/* User card */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full overflow-hidden bg-cyan-500/15 flex items-center justify-center font-semibold">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt="Profilbild"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-cyan-400">
+                  {user.fornamn?.[0]}
+                  {user.efternamn?.[0]}
+                </span>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white truncate">
+                {user.fornamn} {user.efternamn}
+              </div>
+              <div className="mt-1 inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-300">
+                {user.roll}
+              </div>
+            </div>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 overflow-y-auto pr-1 space-y-3">
           {user.roll === 'superadmin' && (
             <>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Users size={18} />
-                Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/createuser')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Users size={18} />
-                Skapa användare
-              </button>
+              <NavSection title="Översikt">
+                <NavItem
+                  to="/dashboard"
+                  icon={<Users size={18} />}
+                  active={isActive('/dashboard')}
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Dashboard
+                </NavItem>
+              </NavSection>
 
-              <button
-                onClick={() => navigate('/dashboard/users')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <User size={18} />
-                Alla användare
-              </button>
+              <NavSection title="Fastigheter">
+                <NavItem
+                  to="/dashboard/fastighet/create"
+                  icon={<PlusCircle size={18} />}
+                  active={isActive('/dashboard/fastighet/create')}
+                  onClick={() => navigate('/dashboard/fastighet/create')}
+                >
+                  Skapa fastighet
+                </NavItem>
 
-              <button
-                onClick={() => navigate('/dashboard/fastighet/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <PlusCircle size={18} />
-                Skapa Fastighet
-              </button>
+                <NavItem
+                  to="/dashboard/fastighet/skotarform"
+                  icon={<Wrench size={18} />}
+                  active={isActive('/dashboard/fastighet/skotarform')}
+                  onClick={() => navigate('/dashboard/fastighet/skotarform')}
+                >
+                  Tilldela fastighetskötare
+                </NavItem>
 
-              <button
-                onClick={() => navigate('/dashboard/fastighet/skotarform')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Wrench size={18} />
-                Tilldela Fastighetskötare
-              </button>
+                <NavItem
+                  to="/dashboard/fastigheter"
+                  icon={<Home size={18} />}
+                  active={isActive('/dashboard/fastigheter')}
+                  onClick={() => navigate('/dashboard/fastigheter')}
+                >
+                  Visa fastigheter
+                </NavItem>
+              </NavSection>
 
-              <button
-                onClick={() => navigate('/dashboard/fastigheter')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Home size={18} />
-                Visa fastigheter
-              </button>
+              <NavSection title="Byggnader">
+                <NavItem
+                  to="/dashboard/byggnader/create"
+                  icon={<PlusCircle size={18} />}
+                  active={isActive('/dashboard/byggnader/create')}
+                  onClick={() => navigate('/dashboard/byggnader/create')}
+                >
+                  Skapa byggnader
+                </NavItem>
 
-              <button
-                onClick={() => navigate('/dashboard/byggnader/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <PlusCircle size={18} />
-                Skapa byggnader
-              </button>
+                <NavItem
+                  to="/dashboard/byggnader/skotarform"
+                  icon={<Wrench size={18} />}
+                  active={isActive('/dashboard/byggnader/skotarform')}
+                  onClick={() => navigate('/dashboard/byggnader/skotarform')}
+                >
+                  Tilldela byggnadsskötare
+                </NavItem>
 
-              <button
-                onClick={() => navigate('/dashboard/byggnader/skotarform')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Wrench size={18} />Tilldela Byggnadsskötare
-              </button>
+                <NavItem
+                  to="/dashboard/byggnader"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/byggnader')}
+                  onClick={() => navigate('/dashboard/byggnader')}
+                >
+                  Visa byggnader
+                </NavItem>
+              </NavSection>
 
-              <button
-                onClick={() => navigate('/dashboard/byggnader')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa byggnader
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/objekt/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <PlusCircle size={18} />
-                Skapa Objekt
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/objekt/skotarform')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Wrench size={18} />Tilldela Skötare
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/objekt')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa objekt
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/underhall/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Skapa Underhåll
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/underhall')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa Underhåll
-              </button>
+              <NavSection title="Objekt">
+                <NavItem
+                  to="/dashboard/objekt/create"
+                  icon={<PlusCircle size={18} />}
+                  active={isActive('/dashboard/objekt/create')}
+                  onClick={() => navigate('/dashboard/objekt/create')}
+                >
+                  Skapa objekt
+                </NavItem>
 
+                <NavItem
+                  to="/dashboard/objekt/skotarform"
+                  icon={<Wrench size={18} />}
+                  active={isActive('/dashboard/objekt/skotarform')}
+                  onClick={() => navigate('/dashboard/objekt/skotarform')}
+                >
+                  Tilldela skötare
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/objekt"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/objekt')}
+                  onClick={() => navigate('/dashboard/objekt')}
+                >
+                  Visa objekt
+                </NavItem>
+              </NavSection>
+
+              <NavSection title="Underhåll">
+                <NavItem
+                  to="/dashboard/underhall/create"
+                  icon={<Wrench size={18} />}
+                  active={isActive('/dashboard/underhall/create')}
+                  onClick={() => navigate('/dashboard/underhall/create')}
+                >
+                  Skapa underhåll
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/underhall"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/underhall')}
+                  onClick={() => navigate('/dashboard/underhall')}
+                >
+                  Visa underhåll
+                </NavItem>
+              </NavSection>
+
+              <NavSection title="Administration">
+                <NavItem
+                  to="/dashboard/createuser"
+                  icon={<Users size={18} />}
+                  active={isActive('/dashboard/createuser')}
+                  onClick={() => navigate('/dashboard/createuser')}
+                >
+                  Skapa användare
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/users"
+                  icon={<User size={18} />}
+                  active={isActive('/dashboard/users')}
+                  onClick={() => navigate('/dashboard/users')}
+                >
+                  Alla användare
+                </NavItem>
+              </NavSection>
             </>
           )}
 
           {user.roll === 'admin' && (
             <>
-              <button
-                onClick={() => navigate('/dashboard/me')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <User size={18} />
-                Mina uppgifter
-              </button>
+              <NavSection title="Konto">
+                <NavItem
+                  to="/dashboard/me"
+                  icon={<User size={18} />}
+                  active={isActive('/dashboard/me')}
+                  onClick={() => navigate('/dashboard/me')}
+                >
+                  Mina uppgifter
+                </NavItem>
+              </NavSection>
 
-              <button
-                onClick={() => navigate('/dashboard/fastighet/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <PlusCircle size={18} />
-                Skapa Fastighet
-              </button>
+              <NavSection title="Fastigheter">
+                <NavItem
+                  to="/dashboard/fastighet/create"
+                  icon={<PlusCircle size={18} />}
+                  active={isActive('/dashboard/fastighet/create')}
+                  onClick={() => navigate('/dashboard/fastighet/create')}
+                >
+                  Skapa fastighet
+                </NavItem>
 
-              <button
-                onClick={() => navigate('/dashboard/fastigheter')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Home size={18} />
-                Visa fastigheter
-              </button>
+                <NavItem
+                  to="/dashboard/fastigheter"
+                  icon={<Home size={18} />}
+                  active={isActive('/dashboard/fastigheter')}
+                  onClick={() => navigate('/dashboard/fastigheter')}
+                >
+                  Visa fastigheter
+                </NavItem>
+              </NavSection>
 
-              <button
-                onClick={() => navigate('/dashboard/byggnader')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa byggnader
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/objekt/create')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <PlusCircle size={18} />
-                Skapa Objekt
-              </button>
+              <NavSection title="Byggnader & objekt">
+                <NavItem
+                  to="/dashboard/byggnader"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/byggnader')}
+                  onClick={() => navigate('/dashboard/byggnader')}
+                >
+                  Visa byggnader
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/objekt/create"
+                  icon={<PlusCircle size={18} />}
+                  active={isActive('/dashboard/objekt/create')}
+                  onClick={() => navigate('/dashboard/objekt/create')}
+                >
+                  Skapa objekt
+                </NavItem>
+              </NavSection>
             </>
           )}
+
           {user.roll === 'user' && (
             <>
-              <button
-                onClick={() => navigate('/dashboard/me')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <User size={18} />
-                Mina uppgifter
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/fastigheter')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Home size={18} />
-                Visa fastigheter
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/byggnader')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa byggnader
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/objekt')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa objekt
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/underhall')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-              >
-                <Building2 size={18} />
-                Visa Underhåll
-              </button>
+              <NavSection title="Konto">
+                <NavItem
+                  to="/dashboard/me"
+                  icon={<User size={18} />}
+                  active={isActive('/dashboard/me')}
+                  onClick={() => navigate('/dashboard/me')}
+                >
+                  Mina uppgifter
+                </NavItem>
+              </NavSection>
 
+              <NavSection title="Översikt">
+                <NavItem
+                  to="/dashboard/fastigheter"
+                  icon={<Home size={18} />}
+                  active={isActive('/dashboard/fastigheter')}
+                  onClick={() => navigate('/dashboard/fastigheter')}
+                >
+                  Visa fastigheter
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/byggnader"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/byggnader')}
+                  onClick={() => navigate('/dashboard/byggnader')}
+                >
+                  Visa byggnader
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/objekt"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/objekt')}
+                  onClick={() => navigate('/dashboard/objekt')}
+                >
+                  Visa objekt
+                </NavItem>
+
+                <NavItem
+                  to="/dashboard/underhall"
+                  icon={<Building2 size={18} />}
+                  active={isActive('/dashboard/underhall')}
+                  onClick={() => navigate('/dashboard/underhall')}
+                >
+                  Visa underhåll
+                </NavItem>
+              </NavSection>
             </>
           )}
         </nav>
 
+        <div className="pt-4 mt-4 border-t border-slate-800 space-y-2">
+          <NavItem
+            to="/dashboard/settings"
+            icon={<Settings size={18} />}
+            active={isActive('/dashboard/settings')}
+            onClick={() => navigate('/dashboard/settings')}
+          >
+            Inställningar
+          </NavItem>
 
-        <button
-          onClick={() => navigate('/dashboard/settings')}
-          className="w-full flex items-center gap-3 px-3 py-2 mt-4 rounded-md text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-        >
-          <Settings size={18} />
-          Inställningar
-        </button>
-
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 mt-4 rounded-md bg-red-600 text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
-        >
-          <LogOut size={18} />
-          Logga ut
-        </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-red-300 hover:bg-red-500/10 hover:text-red-200 transition border border-transparent"
+          >
+            <LogOut size={18} />
+            <span className="text-sm font-medium">Logga ut</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -253,13 +385,12 @@ export function Dashboard() {
             backgroundImage:
               "url('https://images.pexels.com/photos/30291484/pexels-photo-30291484.jpeg?auto=compress&cs=tinysrgb&w=1200')",
           }}
-        ></div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">
+        />
+        <h1 className="text-3xl font-bold text-slate-900 mb-6 relative">
           Välkommen, {user.fornamn}!
         </h1>
 
-
-        {/* === NY: Hero-grid för superadmin === */}
+        {/* Hero-grid för superadmin */}
         {isSuperAdmin && location.pathname === '/dashboard' && (
           <section className="relative">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -306,21 +437,18 @@ export function Dashboard() {
           </section>
         )}
 
-
-        {isSuperAdmin && location.pathname === "/dashboard" && (
+        {isSuperAdmin && location.pathname === '/dashboard' && (
           <section className="relative">
-          <div className="mt-12">
-            <WeeklyUnderhall />
-          </div>
+            <div className="mt-12">
+              <WeeklyUnderhall />
+            </div>
           </section>
         )}
 
-
-        {/* Outlet för under-routes, tex CreateUser eller AllUsers */}
-        <div className='relative mt-10'>
+        {/* Outlet för under-routes */}
+        <div className="relative mt-10">
           <Outlet />
         </div>
-
       </main>
     </div>
   );

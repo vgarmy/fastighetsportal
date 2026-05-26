@@ -9,6 +9,7 @@ export interface User {
   email: string;
   roll: string;
   adress?: string;
+  avatar_url?: string;
 }
 
 interface UserContextType {

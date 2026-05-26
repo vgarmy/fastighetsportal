@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "./userContext";
 import { supabase } from "../lib/supabase";
-import { generateWeeklyPlanPdf } from "../lib/pdf"; // anpassa sökväg
+import { generateWeeklyPlanPdf } from "../lib/pdf";
 import {
   User as UserIcon,
   Mail,
@@ -12,7 +12,9 @@ import {
   CalendarDays,
   Clock,
   ListChecks,
-  Printer
+  Printer,
+  Upload,
+  Loader2
 } from "lucide-react";
 
 /* =========================
@@ -25,13 +27,12 @@ type Underhall = {
   planerat_datum: string | null; // YYYY-MM-DD
 };
 
-
 /* =========================
    Hjälpfunktioner (ISO-vecka Mån–Sön)
    ========================= */
 function getISOWeekNumber(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); // torsdag i aktuell vecka
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil(((+d - +yearStart) / 86400000 + 1) / 7);
   return weekNo;
@@ -39,7 +40,7 @@ function getISOWeekNumber(date = new Date()) {
 
 function getCurrentISOWeekRange(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay() === 0 ? 7 : d.getUTCDay(); // 1=mån ... 7=sön
+  const day = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
   const mondayUTC = new Date(d);
   mondayUTC.setUTCDate(d.getUTCDate() - day + 1);
   mondayUTC.setUTCHours(0, 0, 0, 0);
@@ -80,11 +81,83 @@ function statusBadgeColor(status: Underhall["status"]) {
   }
 }
 
+function getInitials(fornamn?: string, efternamn?: string) {
+  const f = (fornamn ?? "").trim().charAt(0);
+  const e = (efternamn ?? "").trim().charAt(0);
+  return `${f}${e}`.toUpperCase() || "?";
+}
+
 /* =========================
    Komponent
    ========================= */
 export function UserSettings() {
   const { user } = useUser();
+
+  // ---- Avatar state ----
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAvatarUrl((user as any)?.avatar_url ?? null);
+  }, [user]);
+
+  async function handleAvatarUpload(file: File) {
+    if (!user) return;
+
+    try {
+      setUploadingAvatar(true);
+      setAvatarError(null);
+
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Endast JPG, PNG eller WEBP är tillåtna.");
+      }
+
+      const maxSizeMb = 5;
+      if (file.size > maxSizeMb * 1024 * 1024) {
+        throw new Error(`Bilden är för stor. Max ${maxSizeMb} MB.`);
+      }
+
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const safeUserId =
+        (user as any)?.id ??
+        String(user.email).replace(/[^a-zA-Z0-9-_]/g, "_");
+
+      const filePath = `${safeUserId}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("fastighets_users")
+        .update({
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("email", user.email);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+    } catch (e: any) {
+      setAvatarError(e.message ?? "Kunde inte ladda upp profilbilden.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   // ---- Underhållsplan state ----
   const [{ start, end, week }] = useState(() => getCurrentISOWeekRange());
@@ -101,28 +174,21 @@ export function UserSettings() {
       setLoadingPlan(true);
       setPlanError(null);
       try {
-        // Vi använder skötarens ID – finns det som user.skotare_id i din app.
         const skotareId = (user as any)?.skotare_id ?? (user as any)?.id ?? null;
         if (!skotareId) {
           if (!cancelled) setItems([]);
           return;
         }
 
-        // 🔒 Bara mina: INNER JOIN mot underhåll_skotare
-        // Viktigt: Tabellnamn och kolumnnamn exakt som i din DB:
-        //  - Tabell: underhåll_skotare (med å)
-        //  - Kolumn: skotare_id (utan ö), underhåll_id (med å)
         const { data, error } = await supabase
           .from("underhåll")
-          .select(
-            `
-          id, rubrik, status, planerat_datum,
-          underhåll_skotare!inner(skotare_id)
-        `
-          )
+          .select(`
+            id, rubrik, status, planerat_datum,
+            underhåll_skotare!inner(skotare_id)
+          `)
           .gte("planerat_datum", ymdStart)
           .lte("planerat_datum", ymdEnd)
-          .eq("underhåll_skotare.skotare_id", skotareId) // <-- kolumnen är ASCII här
+          .eq("underhåll_skotare.skotare_id", skotareId)
           .order("planerat_datum", { ascending: true })
           .returns<
             (Underhall & { underhåll_skotare: { skotare_id: string }[] })[]
@@ -152,7 +218,7 @@ export function UserSettings() {
     return () => {
       cancelled = true;
     };
-  }, [ymdStart, ymdEnd, user]); // se till att du INTE har kvar 'onlyMine' här
+  }, [ymdStart, ymdEnd, user]);
 
   if (!user)
     return (
@@ -170,7 +236,7 @@ export function UserSettings() {
             <Settings className="w-6 h-6 text-gray-700" />
             Användarinställningar
           </h1>
-          <div className="flex flex-wrap gap-2">{/* plats för knappar */}</div>
+          <div className="flex flex-wrap gap-2"></div>
         </div>
       </div>
 
@@ -179,6 +245,71 @@ export function UserSettings() {
         {/* Vänster: Profil */}
         <div className="lg:col-span-2">
           <div className="bg-white shadow-xl border border-slate-200 rounded-2xl p-8 space-y-8">
+            {/* Profilbild */}
+            <div>
+              <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2 mb-4">
+                <UserIcon className="w-5 h-5 text-slate-400" />
+                Profilbild
+              </h2>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-5 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="shrink-0">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Profilbild"
+                      className="w-24 h-24 rounded-full object-cover border border-slate-300 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 text-2xl font-bold shadow-sm">
+                      {getInitials(user.fornamn, user.efternamn)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      Ladda upp profilbild
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      JPG, PNG eller WEBP. Max 5 MB.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition cursor-pointer text-slate-700 font-medium">
+                      {uploadingAvatar ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {uploadingAvatar ? "Laddar upp..." : "Välj bild"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleAvatarUpload(file);
+                          }
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {avatarError && (
+                    <div className="rounded-md border border-red-300 bg-red-50 text-red-900 text-sm p-3">
+                      {avatarError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Profilinfo */}
             <div>
               <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2 mb-4">
@@ -235,13 +366,12 @@ export function UserSettings() {
               <div>
                 <h3 className="font-semibold text-slate-800">Behörighetsnivå</h3>
                 <p className="text-slate-600 text-sm">
-                  Du är inloggad som{" "}
-                  <span className="font-semibold">{user.roll}</span>.
+                  Du är inloggad som <span className="font-semibold">{user.roll}</span>.
                 </p>
               </div>
             </div>
 
-            {/* Inställningsknappar (framtid) */}
+            {/* Inställningsknappar */}
             <div className="pt-4 border-t border-slate-200">
               <h2 className="text-xl font-semibold text-slate-800 mb-4">
                 Fler inställningar
@@ -288,14 +418,12 @@ export function UserSettings() {
               {formatSvDate(start)} – {formatSvDate(end)}
             </p>
 
-            {/* Fel */}
             {planError && (
               <div className="mb-3 rounded border border-red-300 bg-red-50 text-red-900 text-sm p-3">
                 {planError}
               </div>
             )}
 
-            {/* Laddar */}
             {loadingPlan && (
               <div className="space-y-2">
                 {[...Array(4)].map((_, i) => (
@@ -307,14 +435,12 @@ export function UserSettings() {
               </div>
             )}
 
-            {/* Tomt */}
             {!loadingPlan && items.length === 0 && (
               <div className="rounded-md border border-slate-200 bg-slate-50 text-slate-700 p-4 text-sm">
                 Inga underhåll hittades denna vecka.
               </div>
             )}
 
-            {/* Lista */}
             {!loadingPlan && items.length > 0 && (
               <ul className="space-y-3">
                 {items.map((u) => (
@@ -325,9 +451,7 @@ export function UserSettings() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-sm text-slate-500 mb-1">
-                          {u.planerat_datum
-                            ? formatSvDate(u.planerat_datum)
-                            : "—"}
+                          {u.planerat_datum ? formatSvDate(u.planerat_datum) : "—"}
                         </div>
                         <div className="font-medium text-slate-900 truncate">
                           {u.rubrik ?? "(utan rubrik)"}
@@ -348,13 +472,10 @@ export function UserSettings() {
               </ul>
             )}
 
-            {/* Länk/knapp till underhållet (kan kopplas till routing) */}
-
             <div className="mt-5 grid grid-cols-2 gap-2">
               <button
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
                 onClick={() => {
-                  // Navigera till hela underhållsvyn om du vill
                   // navigate('/dashboard/underhall?vecka=' + week)
                 }}
               >
@@ -366,8 +487,12 @@ export function UserSettings() {
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-blue-200 text-white bg-blue-600 hover:bg-blue-700 transition"
                 onClick={() =>
                   generateWeeklyPlanPdf({
-                    user: { fornamn: user.fornamn, efternamn: user.efternamn, email: user.email },
-                    items, // <- dina redan filtrerade personliga uppdrag
+                    user: {
+                      fornamn: user.fornamn,
+                      efternamn: user.efternamn,
+                      email: user.email
+                    },
+                    items,
                     week,
                     start,
                     end,
@@ -378,7 +503,6 @@ export function UserSettings() {
                 Skriv ut underhållsplan (PDF)
               </button>
             </div>
-
           </div>
         </aside>
       </div>
