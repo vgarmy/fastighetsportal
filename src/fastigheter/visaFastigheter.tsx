@@ -177,7 +177,7 @@ export function VisaFastigheter() {
                       <button
                         key={s.id}
                         onClick={() => navigate(`/dashboard/users/${s.id}`)}
-                        className="bg-blue-50 text-blue-900 px-3 py-1 rounded hover:bg-blue-100 transition text-sm border border-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        className="bg-blue-50 text-blue-900 px-3 py-1 rounded hover:bg-blue-100 transition text-sm border border-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
                       >
                         {s.fornamn} {s.efternamn}
                       </button>
@@ -189,7 +189,7 @@ export function VisaFastigheter() {
               <div className="pt-2">
                 <button
                   onClick={() => navigate(`/dashboard/fastigheter/${f.id}`)}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
                 >
                   Visa detaljer
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-90" viewBox="0 0 20 20" fill="currentColor">

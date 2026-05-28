@@ -178,7 +178,7 @@ export function FastighetDetaljer() {
 
             <button
               onClick={() => navigate(`/dashboard/fastighet/create?id=${fastighet.id}`)}
-              className="text-sm bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 transition"
+              className="text-sm bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 transition cursor-pointer"
             >
               Redigera
             </button>
@@ -220,7 +220,7 @@ export function FastighetDetaljer() {
             <h2 className="text-lg font-semibold text-gray-900">Fastighetsskötare</h2>
             <button
               onClick={() => navigate(`/dashboard/fastighet/skotarform?fastighet=${fastighet.id}`)}
-              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
+              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition cursor-pointer"
             >
               Hantera
             </button>
@@ -234,7 +234,7 @@ export function FastighetDetaljer() {
                 <button
                   key={s.id}
                   onClick={() => navigate(`/dashboard/users/${s.id}`)}
-                  className="bg-blue-50 text-blue-900 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100 transition text-sm"
+                  className="bg-blue-50 text-blue-900 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100 transition text-sm cursor-pointer"
                 >
                   {s.fornamn} {s.efternamn}
                 </button>
@@ -251,13 +251,13 @@ export function FastighetDetaljer() {
           <div className="flex gap-2">
             <button
               onClick={() => navigate(`../byggnader/create?fastighet=${fastighet.id}`)}
-              className="text-sm bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 transition"
+              className="text-sm bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 transition cursor-pointer"
             >
               Lägg till byggnad
             </button>
             <button
               onClick={() => navigate(`../byggnader/skotarform?fastighet=${fastighet.id}`)}
-              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
+              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition cursor-pointer"
             >
               Tilldela skötare
             </button>
@@ -306,7 +306,7 @@ export function FastighetDetaljer() {
                           <button
                             key={s.id}
                             onClick={() => navigate(`/dashboard/users/${s.id}`)}
-                            className="bg-indigo-50 text-indigo-900 px-3 py-1 rounded border border-indigo-200 hover:bg-indigo-100 transition text-xs"
+                            className="bg-indigo-50 text-indigo-900 px-3 py-1 rounded border border-indigo-200 hover:bg-indigo-100 transition text-xs cursor-pointer"
                           >
                             {s.fornamn} {s.efternamn}
                           </button>
@@ -319,7 +319,7 @@ export function FastighetDetaljer() {
                 <div className="p-5 pt-0">
                   <button
                     onClick={() => navigate(`/dashboard/byggnader/${b.id}`)}
-                    className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-800 text-sm font-medium"
+                    className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-800 text-sm font-medium cursor-pointer"
                   >
                     Visa byggnadsdetaljer
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

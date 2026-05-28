@@ -21,6 +21,7 @@ export function FastighetSkotareForm() {
   const [searchParams] = useSearchParams();
 
   const fastighetIdFromQuery = searchParams.get('fastighet') || '';
+  const isEditMode = Boolean(fastighetIdFromQuery);
 
   const [fastigheter, setFastigheter] = useState<Fastighet[]>([]);
   const [skotare, setSkotare] = useState<Skotare[]>([]);
@@ -115,7 +116,6 @@ export function FastighetSkotareForm() {
     setError(null);
 
     try {
-      // 1. Ta bort gamla kopplingar
       const { error: deleteError } = await supabase
         .from('fastighet_skotare')
         .delete()
@@ -123,7 +123,6 @@ export function FastighetSkotareForm() {
 
       if (deleteError) throw deleteError;
 
-      // 2. Lägg in nya kopplingar om det finns valda skötare
       if (valdaSkotare.length > 0) {
         const inserts = valdaSkotare.map((skotare_id) => ({
           fastighet_id: valdFastighet,
@@ -138,7 +137,7 @@ export function FastighetSkotareForm() {
         if (insertError) throw insertError;
       }
 
-      alert('Fastighetsskötare uppdaterade!');
+      alert(isEditMode ? 'Fastighetsskötare uppdaterade!' : 'Fastighetsskötare sparade!');
       navigate(`/dashboard/fastigheter/${valdFastighet}`);
     } catch (err: any) {
       setError(err.message || 'Ett fel uppstod vid uppdatering.');
@@ -166,7 +165,7 @@ export function FastighetSkotareForm() {
       className="p-8 bg-white rounded-2xl shadow-lg max-w-lg mx-auto space-y-6"
     >
       <h2 className="text-2xl font-bold text-gray-900 text-center">
-        Uppdatera fastighetsskötare
+        {isEditMode ? 'Uppdatera fastighetsskötare' : 'Koppla fastighetsskötare'}
       </h2>
 
       {error && (
@@ -219,18 +218,23 @@ export function FastighetSkotareForm() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition w-full"
+          className="bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition w-full cursor-pointer"
         >
-          {loading ? 'Sparar...' : 'Uppdatera skötare'}
+          {loading
+            ? isEditMode
+              ? 'Uppdaterar...'
+              : 'Sparar...'
+            : isEditMode
+              ? 'Uppdatera skötare'
+              : 'Spara skötare'}
         </button>
-
-        {valdFastighet && (
+        {isEditMode && (
           <button
             type="button"
-            onClick={() => navigate(`/dashboard/fastigheter/${valdFastighet}`)}
-            className="bg-gray-200 text-gray-900 font-semibold px-5 py-3 rounded-xl hover:bg-gray-300 transition"
+            onClick={() => navigate(-1)}
+            className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold cursor-pointer"
           >
-            Avbryt
+            Tillbaka
           </button>
         )}
       </div>

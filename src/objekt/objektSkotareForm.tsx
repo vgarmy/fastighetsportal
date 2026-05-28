@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
@@ -45,7 +44,6 @@ export function ObjektSkotareForm() {
   const [objekt, setObjekt] = useState<ObjektRow[]>([]);
   const [skotare, setSkotare] = useState<SkotareRow[]>([]);
 
-  // Stabil initialisering från URL (låser om given)
   const initialFastighetPreset = fastighetFromQuery ?? '';
   const initialByggnadPreset = byggnadFromQuery ?? '';
   const initialObjektPreset = objektFromQuery ?? '';
@@ -67,16 +65,15 @@ export function ObjektSkotareForm() {
   const isByggnadLocked = Boolean(initialByggnadPreset);
   const isObjektLocked = Boolean(initialObjektPreset);
 
-  // Etiketter
   const labelFastighet = (f: FastighetRow) => f.namn || f.adress || 'Namnlös fastighet';
   const labelByggnad = (b: ByggnadRow) => b.namn;
   const labelObjekt = (o: ObjektRow) => o.namn || o.id;
 
-  // 1) Ladda grunddata
   useEffect(() => {
     const load = async () => {
       setLoadingInit(true);
       setError(null);
+
       try {
         const [
           { data: fData, error: fErr },
@@ -95,62 +92,85 @@ export function ObjektSkotareForm() {
         if (oErr) throw oErr;
         if (sErr) throw sErr;
 
-        const fList = fData ?? [];
-        const bList = bData ?? [];
-        const oList = oData ?? [];
+        const allFastigheter = fData ?? [];
+        const allByggnader = bData ?? [];
+        const allObjekt = oData ?? [];
 
-        setFastigheter(fList);
-        setByggnader(bList);
-        setObjekt(oList);
+        // Endast byggnader som har minst ett objekt
+        const byggnadIdsMedObjekt = new Set(
+          allObjekt
+            .map((o) => o.byggnad_id)
+            .filter(Boolean)
+        );
+
+        const filteredByggnader = allByggnader.filter((b) =>
+          byggnadIdsMedObjekt.has(b.id)
+        );
+
+        // Endast fastigheter som har minst en byggnad som har objekt
+        const fastighetIdsMedGiltigByggnad = new Set(
+          filteredByggnader
+            .map((b) => b.fastighet_id)
+            .filter(Boolean)
+        );
+
+        const filteredFastigheter = allFastigheter.filter((f) =>
+          fastighetIdsMedGiltigByggnad.has(f.id)
+        );
+
+        setFastigheter(filteredFastigheter);
+        setByggnader(filteredByggnader);
+        setObjekt(allObjekt);
         setSkotare(sData ?? []);
 
-        // Default-val om inget låst via URL
-        if (!initialFastighetPreset && fList.length > 0 && !valdFastighet) {
-          setValdFastighet(fList[0].id);
-        }
+        const validFastighetFromPreset =
+          initialFastighetPreset && fastighetIdsMedGiltigByggnad.has(initialFastighetPreset)
+            ? initialFastighetPreset
+            : '';
 
-        // Synka byggnad & objekt mot vald fastighet efter att listor laddats
-        setTimeout(() => {
-          const currentFast = initialFastighetPreset || valdFastighet || fList[0]?.id || '';
-          const byggUnderFast = bList.filter((b) => b.fastighet_id === currentFast);
+        const chosenFastighet =
+          validFastighetFromPreset ||
+          filteredFastigheter[0]?.id ||
+          '';
 
-          // Byggnad preset från URL
-          if (initialByggnadPreset) {
-            const byggExists = bList.some((b) => b.id === initialByggnadPreset);
-            const byggBelongs = bList.some((b) => b.id === initialByggnadPreset && b.fastighet_id === currentFast);
-            const chosenBygg = byggExists && byggBelongs
-              ? initialByggnadPreset
-              : (byggUnderFast[0]?.id || '');
-            setValdByggnad(chosenBygg);
+        setValdFastighet(chosenFastighet);
 
-            // Objekt preset från URL
-            const objUnderBygg = oList.filter((o) => o.byggnad_id === chosenBygg);
-            if (initialObjektPreset) {
-              const objExists = oList.some((o) => o.id === initialObjektPreset);
-              const objBelongs = oList.some((o) => o.id === initialObjektPreset && o.byggnad_id === chosenBygg);
-              setValtObjekt(objExists && objBelongs ? initialObjektPreset : (objUnderBygg[0]?.id || ''));
-            } else {
-              setValtObjekt(objUnderBygg[0]?.id || '');
-            }
-          } else {
-            // Ingen byggnad låst → välj första under fastigheten
-            const chosenBygg = byggUnderFast[0]?.id || '';
-            setValdByggnad(chosenBygg);
-            const objUnderBygg = oList.filter((o) => o.byggnad_id === chosenBygg);
-            setValtObjekt(objUnderBygg[0]?.id || '');
-          }
-        }, 0);
+        const byggnaderUnderFastighet = filteredByggnader.filter(
+          (b) => b.fastighet_id === chosenFastighet
+        );
+
+        const validByggnadFromPreset =
+          initialByggnadPreset &&
+          byggnaderUnderFastighet.some((b) => b.id === initialByggnadPreset)
+            ? initialByggnadPreset
+            : '';
+
+        const chosenByggnad =
+          validByggnadFromPreset ||
+          byggnaderUnderFastighet[0]?.id ||
+          '';
+
+        setValdByggnad(chosenByggnad);
+
+        const objektUnderByggnad = allObjekt.filter((o) => o.byggnad_id === chosenByggnad);
+
+        const validObjektFromPreset =
+          initialObjektPreset &&
+          objektUnderByggnad.some((o) => o.id === initialObjektPreset)
+            ? initialObjektPreset
+            : '';
+
+        setValtObjekt(validObjektFromPreset || objektUnderByggnad[0]?.id || '');
       } catch (e: any) {
         setError(e.message || 'Kunde inte hämta data.');
       } finally {
         setLoadingInit(false);
       }
     };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // 2) Filtrerat innehåll
+    load();
+  }, [initialFastighetPreset, initialByggnadPreset, initialObjektPreset]);
+
   const byggnaderForFastighet = useMemo(
     () => byggnader.filter((b) => b.fastighet_id === valdFastighet),
     [byggnader, valdFastighet]
@@ -161,46 +181,48 @@ export function ObjektSkotareForm() {
     [objekt, valdByggnad]
   );
 
-  // 3) När fastighet ändras manuellt (om inte låst): reset byggnad & objekt
   useEffect(() => {
-    if (!loadingInit) {
-      const under = byggnaderForFastighet;
-      if (!isByggnadLocked) {
-        const nyBygg = under[0]?.id || '';
-        setValdByggnad(nyBygg);
+    if (loadingInit) return;
+
+    if (!isByggnadLocked) {
+      const nyBygg = byggnaderForFastighet[0]?.id || '';
+      setValdByggnad(nyBygg);
+
+      if (!isObjektLocked) {
         const objUnder = objekt.filter((o) => o.byggnad_id === nyBygg);
-        if (!isObjektLocked) setValtObjekt(objUnder[0]?.id || '');
+        setValtObjekt(objUnder[0]?.id || '');
       }
-      setValdaSkotare([]);
-      setTilldelade([]);
-      setOkMessage(null);
-      setError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valdFastighet]);
 
-  // 4) När byggnad ändras (om inte låst): välj första objekt under byggnaden
+    setValdaSkotare([]);
+    setTilldelade([]);
+    setOkMessage(null);
+    setError(null);
+  }, [valdFastighet, byggnaderForFastighet, isByggnadLocked, isObjektLocked, loadingInit, objekt]);
+
   useEffect(() => {
-    if (!loadingInit) {
-      const under = objektForByggnad;
-      if (!isObjektLocked) setValtObjekt(under[0]?.id || '');
-      setValdaSkotare([]);
-      setTilldelade([]);
-      setOkMessage(null);
-      setError(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valdByggnad]);
+    if (loadingInit) return;
 
-  // 5) Ladda tilldelade skötare för valt objekt
+    if (!isObjektLocked) {
+      setValtObjekt(objektForByggnad[0]?.id || '');
+    }
+
+    setValdaSkotare([]);
+    setTilldelade([]);
+    setOkMessage(null);
+    setError(null);
+  }, [valdByggnad, objektForByggnad, isObjektLocked, loadingInit]);
+
   useEffect(() => {
     const loadAssigned = async () => {
       setOkMessage(null);
       setError(null);
+
       if (!valtObjekt) {
         setTilldelade([]);
         return;
       }
+
       const { data, error } = await supabase
         .from('byggnad_objekt_skotare')
         .select('objekt_id, skotare_id, tilldelad_datum')
@@ -213,14 +235,15 @@ export function ObjektSkotareForm() {
         setTilldelade(data ?? []);
       }
     };
+
     loadAssigned();
   }, [valtObjekt]);
 
-  // Anti-blink: injicerade options när valt ID inte finns i listan än
   const injectedFastighetOption = useMemo(() => {
     if (!valdFastighet) return null;
     const inList = fastigheter.some((f) => f.id === valdFastighet);
     if (inList) return null;
+
     return (
       <option key={`injected-f-${valdFastighet}`} value={valdFastighet}>
         {loadingInit ? 'Laddar vald fastighet…' : 'Vald fastighet'}
@@ -232,6 +255,7 @@ export function ObjektSkotareForm() {
     if (!valdByggnad) return null;
     const inList = byggnaderForFastighet.some((b) => b.id === valdByggnad);
     if (inList) return null;
+
     return (
       <option key={`injected-b-${valdByggnad}`} value={valdByggnad}>
         {loadingInit ? 'Laddar vald byggnad…' : 'Vald byggnad'}
@@ -243,6 +267,7 @@ export function ObjektSkotareForm() {
     if (!valtObjekt) return null;
     const inList = objektForByggnad.some((o) => o.id === valtObjekt);
     if (inList) return null;
+
     return (
       <option key={`injected-o-${valtObjekt}`} value={valtObjekt}>
         {loadingInit ? 'Laddar valt objekt…' : 'Valt objekt'}
@@ -252,21 +277,23 @@ export function ObjektSkotareForm() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!valtObjekt || valdaSkotare.length === 0) {
       setError('Välj objekt och minst en skötare.');
       return;
     }
+
     setLoadingSave(true);
     setError(null);
     setOkMessage(null);
 
     try {
       if (overwriteMode) {
-        // Rensa befintliga tilldelningar
         const { error: delErr } = await supabase
           .from('byggnad_objekt_skotare')
           .delete()
           .eq('objekt_id', valtObjekt);
+
         if (delErr) throw delErr;
       }
 
@@ -276,7 +303,6 @@ export function ObjektSkotareForm() {
         tilldelad_datum: new Date().toISOString(),
       }));
 
-      // Upsert (kräver PK (objekt_id, skotare_id))
       const { error: upErr } = await supabase
         .from('byggnad_objekt_skotare')
         .upsert(rows, { onConflict: 'objekt_id,skotare_id', ignoreDuplicates: true });
@@ -286,11 +312,11 @@ export function ObjektSkotareForm() {
       setOkMessage(overwriteMode ? 'Skötare ersatta för objektet.' : 'Skötare kopplade till objektet.');
       setValdaSkotare([]);
 
-      // Refresh
       const { data: afterData, error: afterErr } = await supabase
         .from('byggnad_objekt_skotare')
         .select('objekt_id, skotare_id, tilldelad_datum')
         .eq('objekt_id', valtObjekt);
+
       if (afterErr) throw afterErr;
       setTilldelade(afterData ?? []);
     } catch (e: any) {
@@ -302,17 +328,20 @@ export function ObjektSkotareForm() {
 
   const handleRemove = async (skotare_id: string) => {
     if (!valtObjekt) return;
+
     setLoadingSave(true);
     setError(null);
     setOkMessage(null);
+
     try {
       const { error: delErr } = await supabase
         .from('byggnad_objekt_skotare')
         .delete()
         .match({ objekt_id: valtObjekt, skotare_id });
+
       if (delErr) throw delErr;
 
-      setTilldelade((prev) => prev.filter((k) => !(k.skotare_id === skotare_id)));
+      setTilldelade((prev) => prev.filter((k) => k.skotare_id !== skotare_id));
       setOkMessage('Skötare borttagen från objektet.');
     } catch (e: any) {
       setError(e.message || 'Kunde inte ta bort skötare.');
@@ -327,6 +356,21 @@ export function ObjektSkotareForm() {
     return `${s.fornamn} ${s.efternamn}${s.email ? ` (${s.email})` : ''}`;
   };
 
+  const hasAnyValidFastigheter = fastigheter.length > 0;
+
+  if (!loadingInit && !hasAnyValidFastigheter) {
+    return (
+      <div className="p-8 bg-white rounded-2xl shadow-lg max-w-xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
+          Tilldela fastighetsskötare till byggnadsobjekt
+        </h2>
+        <div className="text-center text-gray-600 border border-gray-200 bg-gray-50 rounded-lg p-4">
+          Det finns inga fastigheter med byggnader som innehåller objekt ännu.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleAdd} className="p-8 bg-white rounded-2xl shadow-lg max-w-xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold text-gray-900 text-center">
@@ -338,13 +382,13 @@ export function ObjektSkotareForm() {
           {error}
         </div>
       )}
+
       {okMessage && (
         <div className="text-green-700 font-medium text-center border border-green-200 bg-green-50 rounded-md p-2">
           {okMessage}
         </div>
       )}
 
-      {/* Fastighet */}
       <div className="space-y-2">
         <label className="block font-semibold text-gray-700">Välj fastighet</label>
         <select
@@ -355,7 +399,7 @@ export function ObjektSkotareForm() {
         >
           {injectedFastighetOption}
           {loadingInit && <option>Laddar…</option>}
-          {!loadingInit && fastigheter.length === 0 && <option>Inga fastigheter</option>}
+          {!loadingInit && fastigheter.length === 0 && <option>Inga fastigheter med objekt</option>}
           {!loadingInit &&
             fastigheter.map((f) => (
               <option key={f.id} value={f.id}>
@@ -368,7 +412,6 @@ export function ObjektSkotareForm() {
         )}
       </div>
 
-      {/* Byggnad */}
       <div className="space-y-2">
         <label className="block font-semibold text-gray-700">Välj byggnad</label>
         <select
@@ -379,7 +422,7 @@ export function ObjektSkotareForm() {
         >
           {injectedByggnadOption}
           {byggnaderForFastighet.length === 0 ? (
-            <option>Inga byggnader under denna fastighet</option>
+            <option>Inga byggnader med objekt under denna fastighet</option>
           ) : (
             byggnaderForFastighet.map((b) => (
               <option key={b.id} value={b.id}>
@@ -393,7 +436,6 @@ export function ObjektSkotareForm() {
         )}
       </div>
 
-      {/* Objekt */}
       <div className="space-y-2">
         <label className="block font-semibold text-gray-700">Välj objekt</label>
         <select
@@ -418,7 +460,6 @@ export function ObjektSkotareForm() {
         )}
       </div>
 
-      {/* Redan tilldelade skötare */}
       <div className="space-y-2">
         <label className="block font-semibold text-gray-700">Tilldelade skötare</label>
         {tilldelade.length === 0 ? (
@@ -445,7 +486,6 @@ export function ObjektSkotareForm() {
         )}
       </div>
 
-      {/* Välj nya skötare att lägga till */}
       <div className="space-y-2">
         <label className="block font-semibold text-gray-700">Välj skötare (flera möjliga)</label>
         <select
@@ -465,7 +505,6 @@ export function ObjektSkotareForm() {
         <p className="text-xs text-gray-500">Håll in Ctrl/Cmd för att välja flera.</p>
       </div>
 
-      {/* Overwrite-läge */}
       <div className="flex items-center gap-2">
         <input
           id="overwrite"

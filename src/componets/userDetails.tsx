@@ -245,6 +245,15 @@ export function UserDetail() {
         >
           Ta bort
         </button>
+
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          disabled={saving}
+          className="bg-gray-500 text-white px-6 py-2 rounded-md shadow hover:bg-gray-600 transition font-semibold disabled:opacity-60"
+        >
+          Avbryt
+        </button>
       </div>
     </form>
   );

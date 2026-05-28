@@ -466,9 +466,8 @@ export function VisaByggnader() {
                   return (
                     <tr
                       key={b.id}
-                      className={`transition hover:bg-slate-200/70 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
-                      }`}
+                      className={`transition hover:bg-slate-200/70 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
+                        }`}
                     >
                       <td className="px-4 py-4 align-middle">
                         <div className="font-semibold text-gray-900">{b.namn}</div>
@@ -517,7 +516,7 @@ export function VisaByggnader() {
                             }
                             className="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-md hover:bg-blue-800 transition cursor-pointer"
                           >
-                            Tilldela skötare
+                            Redigera skötare
                           </button>
 
                           {fastighetViewId && (

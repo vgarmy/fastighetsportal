@@ -1,11 +1,9 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
 
 interface ByggnadsObjektFormProps {
   onSaved?: () => void;
-  // Valfritt: förförvald & låst kontext
   presetFastighetId?: string;
   presetByggnadId?: string;
 }
@@ -22,7 +20,6 @@ type ByggnadOption = {
   fastighet_id: string;
 };
 
-// Justerbar lista beroende på din domän
 const OBJEKT_TYPER = ['lägenhet', 'förråd', 'soprum', 'källare', 'lokal', 'kontor', 'gård', 'annan'] as const;
 type ObjektTyp = (typeof OBJEKT_TYPER)[number];
 
@@ -35,11 +32,9 @@ export function ByggnadsObjektForm({
   const fastighetFromQuery = searchParams.get('fastighet') || undefined;
   const byggnadFromQuery = searchParams.get('byggnad') || undefined;
 
-  // Stabil initialisering (låser om preset/URL finns)
   const initialFastighetPreset = presetFastighetId ?? fastighetFromQuery ?? '';
   const initialByggnadPreset = presetByggnadId ?? byggnadFromQuery ?? '';
 
-  // State
   const [fastigheter, setFastigheter] = useState<FastighetOption[]>([]);
   const [byggnader, setByggnader] = useState<ByggnadOption[]>([]);
   const [loadingInit, setLoadingInit] = useState(true);
@@ -50,29 +45,27 @@ export function ByggnadsObjektForm({
   const [namn, setNamn] = useState('');
   const [typ, setTyp] = useState<ObjektTyp>('lägenhet');
   const [plan, setPlan] = useState('');
-  const [kvadratmeter, setKvadratmeter] = useState(''); // input string -> parseFloat
+  const [kvadratmeter, setKvadratmeter] = useState('');
   const [beskrivning, setBeskrivning] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
 
-  // Låsning (om preset/URL finns)
   const isFastighetLocked = Boolean(initialFastighetPreset);
   const isByggnadLocked = Boolean(initialByggnadPreset);
 
-  // Etikettbyggare
   const labelForFastighet = (f?: FastighetOption | null) => {
     if (!f) return 'Namnlös';
     const base = f.namn || 'Namnlös';
     return f.adress ? `${base} — ${f.adress}` : base;
   };
 
-  // Ladda fastigheter + byggnader en gång
   useEffect(() => {
     const load = async () => {
       setLoadingInit(true);
       setError(null);
+
       try {
         const [
           { data: fData, error: fErr },
@@ -85,79 +78,77 @@ export function ByggnadsObjektForm({
         if (fErr) throw fErr;
         if (bErr) throw bErr;
 
-        const fList = fData ?? [];
-        const bList = bData ?? [];
+        const allFastigheter = fData ?? [];
+        const allByggnader = bData ?? [];
 
-        setFastigheter(fList);
-        setByggnader(bList);
+        // Endast fastigheter som har minst en byggnad
+        const fastighetIdsMedByggnad = new Set(
+          allByggnader
+            .map((b) => b.fastighet_id)
+            .filter(Boolean)
+        );
 
-        // Om ingen preset/URL för fastighet: välj första
-        if (!initialFastighetPreset) {
-          if (fList.length > 0 && !fastighetId) {
-            setFastighetId(fList[0].id);
-          }
-        }
+        const filteredFastigheter = allFastigheter.filter((f) =>
+          fastighetIdsMedByggnad.has(f.id)
+        );
 
-        // Efter att listor finns: synka byggnad preset med vald fastighet
-        setTimeout(() => {
-          const currentFastighet = initialFastighetPreset || fastighetId;
-          const byggUnderFast = bList.filter((b) => b.fastighet_id === currentFastighet);
+        setFastigheter(filteredFastigheter);
+        setByggnader(allByggnader);
 
-          if (initialByggnadPreset) {
-            const exists = bList.some((b) => b.id === initialByggnadPreset);
-            const belongs = bList.some(
-              (b) => b.id === initialByggnadPreset && b.fastighet_id === currentFastighet
-            );
-            if (exists && belongs) {
-              setByggnadId(initialByggnadPreset);
-            } else if (byggUnderFast.length > 0) {
-              setByggnadId(byggUnderFast[0].id);
-            } else {
-              setByggnadId('');
-            }
-          } else {
-            // Ingen byggnad låst -> välj första under fastighet
-            if (byggUnderFast.length > 0) {
-              setByggnadId(byggUnderFast[0].id);
-            } else {
-              setByggnadId('');
-            }
-          }
-        }, 0);
+        const validInitialFastighet =
+          initialFastighetPreset && fastighetIdsMedByggnad.has(initialFastighetPreset)
+            ? initialFastighetPreset
+            : '';
+
+        const chosenFastighetId =
+          validInitialFastighet ||
+          filteredFastigheter[0]?.id ||
+          '';
+
+        setFastighetId(chosenFastighetId);
+
+        const byggnaderUnderValdFastighet = allByggnader.filter(
+          (b) => b.fastighet_id === chosenFastighetId
+        );
+
+        const validInitialByggnad =
+          initialByggnadPreset &&
+          byggnaderUnderValdFastighet.some((b) => b.id === initialByggnadPreset)
+            ? initialByggnadPreset
+            : '';
+
+        setByggnadId(validInitialByggnad || byggnaderUnderValdFastighet[0]?.id || '');
       } catch (e: any) {
         setError(e.message || 'Kunde inte hämta fastigheter/byggnader.');
       } finally {
         setLoadingInit(false);
       }
     };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // Filtrerade byggnader
+    load();
+  }, [initialFastighetPreset, initialByggnadPreset]);
+
   const byggnaderForFastighet = useMemo(
     () => byggnader.filter((b) => b.fastighet_id === fastighetId),
     [byggnader, fastighetId]
   );
 
-  // När fastighet ändras (manuellt), välj första byggnad under fastigheten (om inte låst)
   useEffect(() => {
-    if (!loadingInit) {
-      const under = byggnaderForFastighet;
-      if (!isByggnadLocked) {
-        setByggnadId(under.length > 0 ? under[0].id : '');
-      }
-      setOkMessage(null);
-      setError(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fastighetId]);
+    if (loadingInit) return;
 
-  // Anti-blink: injicera temporära optioner
+    if (!isByggnadLocked) {
+      setByggnadId(byggnaderForFastighet[0]?.id ?? '');
+    }
+
+    setOkMessage(null);
+    setError(null);
+  }, [fastighetId, byggnaderForFastighet, isByggnadLocked, loadingInit]);
+
   const injectedFastighetOption = useMemo(() => {
     if (!fastighetId) return null;
     const inList = fastigheter.some((f) => f.id === fastighetId);
     if (inList) return null;
+
     return (
       <option key={`injected-f-${fastighetId}`} value={fastighetId}>
         {loadingInit ? 'Laddar vald fastighet…' : 'Vald fastighet'}
@@ -169,6 +160,7 @@ export function ByggnadsObjektForm({
     if (!byggnadId) return null;
     const inList = byggnaderForFastighet.some((b) => b.id === byggnadId);
     if (inList) return null;
+
     return (
       <option key={`injected-b-${byggnadId}`} value={byggnadId}>
         {loadingInit ? 'Laddar vald byggnad…' : 'Vald byggnad'}
@@ -177,14 +169,19 @@ export function ByggnadsObjektForm({
   }, [byggnadId, byggnaderForFastighet, loadingInit]);
 
   const resetForm = () => {
-    // Behåll låsta val, annars återställ till första
     if (!isFastighetLocked) {
-      setFastighetId(fastigheter[0]?.id ?? '');
-    }
-    if (!isByggnadLocked) {
-      const under = byggnaderForFastighet;
+      const firstFastighetId = fastigheter[0]?.id ?? '';
+      setFastighetId(firstFastighetId);
+
+      const under = byggnader.filter((b) => b.fastighet_id === firstFastighetId);
+      if (!isByggnadLocked) {
+        setByggnadId(under[0]?.id ?? '');
+      }
+    } else if (!isByggnadLocked) {
+      const under = byggnader.filter((b) => b.fastighet_id === fastighetId);
       setByggnadId(under[0]?.id ?? '');
     }
+
     setNamn('');
     setTyp('lägenhet');
     setPlan('');
@@ -197,27 +194,28 @@ export function ByggnadsObjektForm({
     setError(null);
     setOkMessage(null);
 
-    // Grundvalidering
     if (!fastighetId) {
       setError('Välj en fastighet.');
       setSaving(false);
       return;
     }
+
     if (!byggnadId) {
       setError('Välj en byggnad.');
       setSaving(false);
       return;
     }
+
     if (!namn.trim()) {
       setError('Namn är obligatoriskt.');
       setSaving(false);
       return;
     }
 
-    // Konverteringar
     const kvadratVal = kvadratmeter.trim()
       ? parseFloat(kvadratmeter.trim().replace(',', '.'))
       : null;
+
     if (kvadratmeter.trim() && Number.isNaN(kvadratVal)) {
       setError('Kvadratmeter måste vara ett tal (använd punkt eller komma).');
       setSaving(false);
@@ -259,7 +257,6 @@ export function ByggnadsObjektForm({
       {error && <div className="text-red-600 font-medium text-center">{error}</div>}
       {okMessage && <div className="text-green-700 font-medium text-center">{okMessage}</div>}
 
-      {/* Fastighet */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Fastighet</label>
         <select
@@ -270,7 +267,9 @@ export function ByggnadsObjektForm({
         >
           {injectedFastighetOption}
           {loadingInit && <option>Laddar…</option>}
-          {!loadingInit && fastigheter.length === 0 && <option>Inga fastigheter</option>}
+          {!loadingInit && fastigheter.length === 0 && (
+            <option>Inga fastigheter med byggnader</option>
+          )}
           {!loadingInit &&
             fastigheter.map((f) => (
               <option key={f.id} value={f.id}>
@@ -278,6 +277,7 @@ export function ByggnadsObjektForm({
               </option>
             ))}
         </select>
+
         {isFastighetLocked && (
           <p className="text-xs text-gray-500 mt-1">
             Förvald fastighet (låst): <span className="font-medium">{selectedFastighetLabel}</span>
@@ -285,7 +285,6 @@ export function ByggnadsObjektForm({
         )}
       </div>
 
-      {/* Byggnad (filtrerad) */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Byggnad</label>
         <select
@@ -305,12 +304,12 @@ export function ByggnadsObjektForm({
             ))
           )}
         </select>
+
         {isByggnadLocked && (
           <p className="text-xs text-gray-500 mt-1">Förvald byggnad (låst från URL).</p>
         )}
       </div>
 
-      {/* Namn */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Namn (obligatoriskt)</label>
         <input
@@ -321,7 +320,6 @@ export function ByggnadsObjektForm({
         />
       </div>
 
-      {/* Typ */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Typ</label>
         <div className="flex flex-wrap gap-2">
@@ -342,7 +340,6 @@ export function ByggnadsObjektForm({
         </div>
       </div>
 
-      {/* Plan */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Plan/våning (valfritt)</label>
         <input
@@ -353,7 +350,6 @@ export function ByggnadsObjektForm({
         />
       </div>
 
-      {/* Kvadratmeter */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Kvadratmeter (valfritt)</label>
         <input
@@ -365,7 +361,6 @@ export function ByggnadsObjektForm({
         />
       </div>
 
-      {/* Beskrivning */}
       <div>
         <label className="block text-gray-700 font-medium mb-1">Beskrivning (valfritt)</label>
         <textarea

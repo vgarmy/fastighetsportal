@@ -229,9 +229,9 @@ export function FastighetForm({ onSaved }: FastighetFormProps) {
                 type="button"
                 key={t}
                 onClick={() => handleTypChange(t)}
-                className={`px-3 py-1 rounded-md border ${typ.includes(t)
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
+                className={`cursor-pointer px-3 py-1 rounded-md border ${typ.includes(t)
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
                   }`}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -259,7 +259,7 @@ export function FastighetForm({ onSaved }: FastighetFormProps) {
             type="file"
             accept="image/*"
             onChange={(e) => setBild(e.target.files?.[0] ?? null)}
-            className="w-full rounded border border-gray-300 bg-white text-gray-900 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full rounded border border-gray-300 bg-white text-gray-900 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
           />
         </div>
 
@@ -268,7 +268,7 @@ export function FastighetForm({ onSaved }: FastighetFormProps) {
             type="button"
             onClick={handleSave}
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1 font-semibold"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1 font-semibold cursor-pointer"
           >
             {loading
               ? isEditMode
@@ -279,11 +279,11 @@ export function FastighetForm({ onSaved }: FastighetFormProps) {
                 : 'Spara fastighet'}
           </button>
 
-          {isEditMode && id && (
+          {isEditMode && (
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/fastigheter/${id}`)}
-              className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold"
+              onClick={() => navigate(-1)}
+              className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold cursor-pointer"
             >
               Avbryt
             </button>
