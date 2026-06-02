@@ -58,8 +58,8 @@ function badgeColor(status: string) {
   switch (status) {
     case "planerat": return "bg-amber-100 text-amber-900 border-amber-200";
     case "pågående": return "bg-blue-100 text-blue-900 border-blue-200";
-    case "klart":    return "bg-emerald-100 text-emerald-900 border-emerald-200";
-    default:         return "bg-slate-100 text-slate-900 border-slate-200";
+    case "klart": return "bg-emerald-100 text-emerald-900 border-emerald-200";
+    default: return "bg-slate-100 text-slate-900 border-slate-200";
   }
 }
 
@@ -175,7 +175,7 @@ export function UnderhallDetalj() {
 
   const fastighet = useMemo(() => item?.fastigheter?.namn ?? item?.fastigheter?.adress ?? null, [item]);
   const byggnad = useMemo(() => item?.byggnader?.namn ?? null, [item]);
-  const objekt   = useMemo(() => item?.objekt?.namn ?? null, [item]);
+  const objekt = useMemo(() => item?.objekt?.namn ?? null, [item]);
 
   if (loading) {
     return (
@@ -231,25 +231,18 @@ export function UnderhallDetalj() {
             </h1>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => navigate(`/dashboard/underhall/${item.id}`)}
-                className="px-3 py-1.5 text-sm border border-slate-300 rounded bg-white/10 text-white hover:bg-white/20"
-              >
-                Visa
-              </button>
+
 
               <button
-                onClick={() => navigate(`/dashboard/underhall/edit/${item.id}`)}
-                className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50"
+                onClick={() =>
+                  navigate({
+                    pathname: '/dashboard/underhall/create',
+                    search: `?id=${item.id}`,
+                  })
+                }
+                className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer"
               >
                 Redigera
-              </button>
-
-              <button
-                onClick={() => navigate(`/dashboard/tilldela/underhall-skotare?underhall=${item.id}`)}
-                className="px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 rounded bg-white hover:bg-indigo-50"
-              >
-                Lägg till skötare
               </button>
 
               <button
@@ -262,7 +255,7 @@ export function UnderhallDetalj() {
 
                   setItem(prev => prev ? { ...prev, status: "klart", klart_datum: today } : prev);
                 }}
-                className="px-3 py-1.5 text-sm border border-emerald-300 text-emerald-700 rounded bg-white hover:bg-emerald-50"
+                className="px-3 py-1.5 text-sm border border-emerald-300 text-emerald-700 rounded bg-white hover:bg-emerald-50 cursor-pointer"
               >
                 Klart
               </button>
@@ -273,7 +266,7 @@ export function UnderhallDetalj() {
                   await supabase.from("underhåll").delete().eq("id", item.id);
                   navigate("/dashboard/underhall");
                 }}
-                className="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded bg-white hover:bg-red-50"
+                className="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded bg-white hover:bg-red-50 cursor-pointer"
               >
                 Ta bort
               </button>

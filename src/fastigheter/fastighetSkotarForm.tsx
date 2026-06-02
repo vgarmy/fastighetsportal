@@ -218,7 +218,7 @@ export function FastighetSkotareForm() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition w-full cursor-pointer"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1 font-semibold cursor-pointer"
         >
           {loading
             ? isEditMode

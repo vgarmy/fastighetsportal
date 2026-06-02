@@ -33,7 +33,7 @@ export function BigActionCard({
         group relative w-full text-left overflow-hidden
         rounded-2xl ${t.bg} shadow-xl ring-1 ${t.ring}
         transition-all duration-200 ease-out ${t.hover} hover:shadow-2xl
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400 cursor-pointer
       `}
     >
       {/* Subtil gradient bakgrund */}

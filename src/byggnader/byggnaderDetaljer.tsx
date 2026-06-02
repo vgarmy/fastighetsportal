@@ -316,7 +316,7 @@ export function ByggnadDetaljer() {
                     })}`,
                   })
                 }
-                className="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold cursor-pointer"
               >
                 Redigera skötare
               </button>
@@ -329,7 +329,7 @@ export function ByggnadDetaljer() {
                     search: `?id=${byggnad.id}`,
                   })
                 }
-                className="text-sm bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition font-medium"
+                className="text-white px-4 py-2 rounded font-semibold cursor-pointer bg-indigo-600 hover:bg-indigo-700"
               >
                 Redigera byggnad
               </button>
@@ -337,7 +337,7 @@ export function ByggnadDetaljer() {
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/byggnader')}
-                className="text-sm bg-white text-slate-800 px-3 py-2 rounded-lg hover:bg-slate-100 transition border border-slate-300 font-medium"
+                className="bg-white text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-100 transition border border-slate-300 font-semibold cursor-pointer"
               >
                 Till listan
               </button>
@@ -433,9 +433,8 @@ export function ByggnadDetaljer() {
                         {byggnad.objekt.slice(0, 4).map((o, i) => (
                           <div
                             key={o.id}
-                            className={`grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 px-4 py-3 ${
-                              i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
-                            }`}
+                            className={`grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
+                              }`}
                           >
                             <div className="md:col-span-5">
                               <div className="text-xs text-slate-500 md:hidden">Namn</div>
@@ -469,19 +468,21 @@ export function ByggnadDetaljer() {
               <div className="xl:col-span-4 space-y-4">
                 <div className="rounded-xl border border-slate-200 bg-white/70 p-4">
                   <h3 className="text-sm font-semibold text-slate-900 mb-3">Snabbåtgärder</h3>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="flex gap-2">
+
                     <button
                       type="button"
                       onClick={() =>
                         navigate({
-                          pathname: '/dashboard/byggnadsobjekt/create',
+                          pathname: '/dashboard/objekt/create',
                           search: `?${createSearchParams({ byggnad: byggnad.id })}`,
                         })
                       }
-                      className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm font-medium"
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium cursor-pointer"
                     >
                       Lägg till objekt
                     </button>
+
 
                     <button
                       type="button"
@@ -494,7 +495,7 @@ export function ByggnadDetaljer() {
                           })}`,
                         })
                       }
-                      className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+                      className="bg-blue-600 text-white px-4 py-2  rounded hover:bg-blue-700 text-sm font-medium cursor-pointer"
                     >
                       Hantera skötare
                     </button>
@@ -507,7 +508,7 @@ export function ByggnadDetaljer() {
                           search: `?id=${byggnad.id}`,
                         })
                       }
-                      className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm font-medium cursor-pointer"
                     >
                       Redigera byggnad
                     </button>
@@ -588,9 +589,8 @@ export function ByggnadDetaljer() {
                   {filteredObjekt.map((o, i) => (
                     <div
                       key={o.id}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-3 ${
-                        i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
-                      }`}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
+                        }`}
                     >
                       <div className="md:col-span-4">
                         <div className="text-xs text-slate-500 md:hidden">Namn</div>
@@ -689,9 +689,8 @@ export function ByggnadDetaljer() {
                   {byggnad.skotare.map((s, i) => (
                     <div
                       key={s.id}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-3 ${
-                        i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
-                      }`}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
+                        }`}
                     >
                       <div className="md:col-span-4">
                         <div className="text-xs text-slate-500 md:hidden">Namn</div>
@@ -747,9 +746,8 @@ export function ByggnadDetaljer() {
                   {historik.map((h, i) => (
                     <div
                       key={h.id}
-                      className={`px-4 py-4 ${
-                        i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
-                      }`}
+                      className={`px-4 py-4 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'
+                        }`}
                     >
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                         <div className="min-w-0">

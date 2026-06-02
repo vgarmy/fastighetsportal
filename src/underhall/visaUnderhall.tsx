@@ -705,13 +705,6 @@ export function UnderhallLista() {
                           >
                             Visa
                           </button>
-
-                          <button
-                            onClick={() => navigate(`/dashboard/tilldela/underhall-skotare?underhall=${u.id}`)}
-                            className="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-md hover:bg-blue-800 transition cursor-pointer"
-                          >
-                            Tilldela skötare
-                          </button>
                         </div>
                       </td>
                     </tr>

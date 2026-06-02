@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useParams, useNavigate, createSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 type Skotare = {
   id: string;
@@ -94,17 +94,17 @@ export function ObjektDetaljer() {
           byggnad_id: data.byggnad_id,
           byggnader: byggRel
             ? {
-                id: byggRel.id,
-                namn: byggRel.namn,
-                fastighet_id: byggRel.fastighet_id,
-                fastigheter: fastRel
-                  ? {
-                      id: fastRel.id,
-                      namn: fastRel.namn,
-                      adress: fastRel.adress,
-                    }
-                  : null,
-              }
+              id: byggRel.id,
+              namn: byggRel.namn,
+              fastighet_id: byggRel.fastighet_id,
+              fastigheter: fastRel
+                ? {
+                  id: fastRel.id,
+                  namn: fastRel.namn,
+                  adress: fastRel.adress,
+                }
+                : null,
+            }
             : null,
           skotare:
             (data.byggnad_objekt_skotare ?? [])
@@ -170,7 +170,7 @@ export function ObjektDetaljer() {
       if (delErr) throw delErr;
 
       // Tillbaka till listan
-      navigate('/dashboard/byggnadsobjekt');
+      navigate('/dashboard/objekt');
     } catch (e: any) {
       setError(e.message || 'Kunde inte ta bort objektet.');
     } finally {
@@ -224,23 +224,21 @@ export function ObjektDetaljer() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() =>
-                navigate({
-                  pathname: '/dashboard/tilldela/objekt-skotare',
-                  search: `?${createSearchParams({
-                    fastighet: fastId || '',
-                    byggnad: byggId || '',
-                    objekt: objekt.id,
-                  })}`,
-                })
+                navigate(
+                  `../objekt/skotarform?fastighet=${fastId ?? ''}&byggnad=${byggId ?? ''}&objekt=${objekt.id}`
+                )
               }
-              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
+              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition cursor-pointer"
             >
               Tilldela skötare
             </button>
 
+
             {/* Anpassa route om du har en edit-sida */}
             <button
-              onClick={() => navigate(`/dashboard/objekt/edit/${objekt.id}`)}
+              onClick={() =>
+                navigate(`/dashboard/objekt/create?id=${objekt.id}`)
+              }
               className="text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700 transition"
             >
               Redigera
@@ -249,14 +247,14 @@ export function ObjektDetaljer() {
             <button
               onClick={handleDeleteObjekt}
               disabled={saving}
-              className="text-sm bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition disabled:opacity-60"
+              className="text-sm bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition disabled:opacity-60 cursor-pointer"
             >
               Ta bort
             </button>
 
             <button
-              onClick={() => navigate('/dashboard/byggnadsobjekt')}
-              className="text-sm bg-gray-100 text-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-200 transition border"
+              onClick={() => navigate('/dashboard/objekt')}
+              className="text-sm bg-gray-100 text-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-200 transition border cursor-pointer"
             >
               Till listan
             </button>
@@ -339,19 +337,15 @@ export function ObjektDetaljer() {
           <h2 className="text-lg font-semibold text-gray-900">Tilldelade skötare</h2>
           <button
             onClick={() =>
-              navigate({
-                pathname: '/dashboard/tilldela/objekt-skotare',
-                search: `?${createSearchParams({
-                  fastighet: fastId || '',
-                  byggnad: byggId || '',
-                  objekt: objekt.id,
-                })}`,
-              })
+              navigate(
+                `../objekt/skotarform?fastighet=${fastId ?? ''}&byggnad=${byggId ?? ''}&objekt=${objekt.id}`
+              )
             }
             className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
           >
-            Hantera
+            Tilldela skötare
           </button>
+
         </div>
 
         {objekt.skotare.length === 0 ? (
@@ -361,7 +355,7 @@ export function ObjektDetaljer() {
             {objekt.skotare.map((s) => (
               <span
                 key={s.id}
-                className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-900 px-3 py-1 rounded-md border border-indigo-200 text-sm"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold disabled:opacity-60 cursor-pointer"
               >
                 <button
                   onClick={() => navigate(`/dashboard/users/${s.id}`)}
@@ -374,7 +368,7 @@ export function ObjektDetaljer() {
                   type="button"
                   onClick={() => handleRemoveSkotare(s.id)}
                   disabled={saving}
-                  className="text-indigo-900/70 hover:text-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded disabled:opacity-50"
+                  className="bg-gray-500 text-white px-6 py-2 rounded-md shadow hover:bg-gray-600 transition font-semibold disabled:opacity-60 cursor-pointer"
                   title="Ta bort"
                 >
                   ✕

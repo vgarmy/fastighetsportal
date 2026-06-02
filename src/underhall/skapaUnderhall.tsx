@@ -1,7 +1,11 @@
-
 // pages/SkapaUnderhall.tsx
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
+import {
+  useNavigate,
+  useSearchParams,
+  createSearchParams,
+  useParams,
+} from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 type Skotare = {
@@ -31,16 +35,30 @@ type ObjektLite = {
 
 type TabKey = 'detaljer' | 'tillhor' | 'skotare';
 
+function uniqueSkotare(list: Skotare[]) {
+  const map = new Map<string, Skotare>();
+  for (const s of list) {
+    if (!s?.id) continue;
+    map.set(s.id, s);
+  }
+  return Array.from(map.values());
+}
+
 export function SkapaUnderhall() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { id: routeId } = useParams<{ id: string }>();
 
-  // ---- Form state ----
+  const editId = routeId || searchParams.get('id') || '';
+  const isEditMode = !!editId;
+
+  // ---- UI state ----
   const [tab, setTab] = useState<TabKey>('tillhor');
   const [saving, setSaving] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Detaljer
+  // ---- Form state ----
   const [rubrik, setRubrik] = useState('');
   const [beskrivning, setBeskrivning] = useState('');
   const [status, setStatus] = useState<'planerat' | 'pågående' | 'klart'>('planerat');
@@ -57,33 +75,142 @@ export function SkapaUnderhall() {
   const [objektId, setObjektId] = useState<string>(searchParams.get('objekt') || '');
 
   // Skötare
-   const [valdaSkotare, setValdaSkotare] = useState<string[]>([]);
-
-  // 🔹 NY: skötare som faktiskt får väljas baserat på Fastighet/Byggnad/Objekt
+  const [valdaSkotare, setValdaSkotare] = useState<string[]>([]);
   const [tillgangligaSkotare, setTillgangligaSkotare] = useState<Skotare[]>([]);
+  const [redanValdaSkotareData, setRedanValdaSkotareData] = useState<Skotare[]>([]);
 
-  // ---- Load initial lists ----
+  // -----------------------------------
+  // Ladda fastigheter
+  // -----------------------------------
   useEffect(() => {
     const loadFastigheter = async () => {
       setError(null);
+
       const { data, error } = await supabase
         .from('fastigheter')
         .select('id, namn, adress')
         .order('namn', { ascending: true });
-      if (error) return setError(error.message);
-      setFastigheter((data ?? []) as any);
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      setFastigheter((data ?? []) as FastighetLite[]);
     };
+
     loadFastigheter();
   }, []);
 
-  // Load byggnader when fastighet changes
+  // -----------------------------------
+  // Edit-läge: hämta befintligt underhåll
+  // -----------------------------------
   useEffect(() => {
-    const loadByggnader = async () => {
-      setByggnader([]);
-      setByggnadId('');
-      setObjekt([]);
-      setObjektId('');
-      if (!fastighetId) return;
+    let cancelled = false;
+
+    async function loadExisting() {
+      if (!isEditMode || !editId) return;
+
+      setLoadingInitial(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase
+          .from('underhåll')
+          .select(`
+            id,
+            rubrik,
+            beskrivning,
+            status,
+            planerat_datum,
+            klart_datum,
+            fastighet_id,
+            byggnad_id,
+            objekt_id
+          `)
+          .eq('id', editId)
+          .single();
+
+        if (error) throw error;
+
+        const item = data as any;
+
+        if (!cancelled) {
+          setRubrik(item.rubrik ?? '');
+          setBeskrivning(item.beskrivning ?? '');
+          setStatus((item.status ?? 'planerat') as 'planerat' | 'pågående' | 'klart');
+          setPlaneratDatum(item.planerat_datum ?? '');
+          setKlartDatum(item.klart_datum ?? '');
+          setFastighetId(item.fastighet_id ?? '');
+          setByggnadId(item.byggnad_id ?? '');
+          setObjektId(item.objekt_id ?? '');
+        }
+
+        // Hämta kopplade skötare
+        const { data: links, error: linkErr } = await supabase
+          .from('underhåll_skotare')
+          .select('skotare_id')
+          .eq('underhåll_id', editId);
+
+        if (linkErr) throw linkErr;
+
+        const ids = Array.from(
+          new Set((links ?? []).map((row: any) => row.skotare_id).filter(Boolean))
+        ) as string[];
+
+        if (ids.length > 0) {
+          if (!cancelled) setValdaSkotare(ids);
+
+          const { data: users, error: usersErr } = await supabase
+            .from('fastighets_users')
+            .select('id, fornamn, efternamn, email')
+            .in('id', ids);
+
+          if (usersErr) throw usersErr;
+
+          if (!cancelled) {
+            setRedanValdaSkotareData((users ?? []) as Skotare[]);
+          }
+        } else {
+          if (!cancelled) {
+            setValdaSkotare([]);
+            setRedanValdaSkotareData([]);
+          }
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e.message || 'Kunde inte läsa in underhållet.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingInitial(false);
+        }
+      }
+    }
+
+    loadExisting();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, isEditMode]);
+
+  // -----------------------------------
+  // Ladda byggnader när fastighet ändras
+  // Behåll byggnad om den fortfarande finns
+  // -----------------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadByggnader() {
+      setError(null);
+
+      if (!fastighetId) {
+        setByggnader([]);
+        setByggnadId('');
+        setObjekt([]);
+        setObjektId('');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('byggnader')
@@ -91,18 +218,46 @@ export function SkapaUnderhall() {
         .eq('fastighet_id', fastighetId)
         .order('namn', { ascending: true });
 
-      if (error) return setError(error.message);
-      setByggnader((data ?? []) as any);
-    };
+      if (error) {
+        if (!cancelled) setError(error.message);
+        return;
+      }
+
+      const list = (data ?? []) as ByggnadLite[];
+
+      if (!cancelled) {
+        setByggnader(list);
+
+        if (byggnadId && !list.some((b) => b.id === byggnadId)) {
+          setByggnadId('');
+          setObjekt([]);
+          setObjektId('');
+        }
+      }
+    }
+
     loadByggnader();
+
+    return () => {
+      cancelled = true;
+    };
   }, [fastighetId]);
 
-  // Load objekt when byggnad changes
+  // -----------------------------------
+  // Ladda objekt när byggnad ändras
+  // Behåll objekt om det fortfarande finns
+  // -----------------------------------
   useEffect(() => {
-    const loadObjekt = async () => {
-      setObjekt([]);
-      setObjektId('');
-      if (!byggnadId) return;
+    let cancelled = false;
+
+    async function loadObjekt() {
+      setError(null);
+
+      if (!byggnadId) {
+        setObjekt([]);
+        setObjektId('');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('byggnad_objekt')
@@ -110,65 +265,100 @@ export function SkapaUnderhall() {
         .eq('byggnad_id', byggnadId)
         .order('namn', { ascending: true });
 
-      if (error) return setError(error.message);
-      setObjekt((data ?? []) as any);
-    };
+      if (error) {
+        if (!cancelled) setError(error.message);
+        return;
+      }
+
+      const list = (data ?? []) as ObjektLite[];
+
+      if (!cancelled) {
+        setObjekt(list);
+
+        if (objektId && !list.some((o) => o.id === objektId)) {
+          setObjektId('');
+        }
+      }
+    }
+
     loadObjekt();
+
+    return () => {
+      cancelled = true;
+    };
   }, [byggnadId]);
 
-  // If byggnad is selected, ensure fastighet sync
+  // -----------------------------------
+  // Synka fastighet om byggnad är vald
+  // -----------------------------------
   useEffect(() => {
     if (!byggnadId || byggnader.length === 0) return;
-    const b = byggnader.find(x => x.id === byggnadId);
+    const b = byggnader.find((x) => x.id === byggnadId);
     if (b && b.fastighet_id !== fastighetId) {
       setFastighetId(b.fastighet_id);
     }
-  }, [byggnadId, byggnader]);
+  }, [byggnadId, byggnader, fastighetId]);
 
-  // 🔹 Ladda tillgängliga skötare utifrån val (prioritet: objekt > byggnad > fastighet)
+  // -----------------------------------
+  // Ladda tillgängliga skötare
+  // prioritet: objekt > byggnad > fastighet
+  // -----------------------------------
   useEffect(() => {
     let cancelled = false;
 
     async function loadAllowedCaretakers() {
       try {
-        // Nollställ om inget valt
+        setError(null);
+
         if (!fastighetId && !byggnadId && !objektId) {
           if (!cancelled) setTillgangligaSkotare([]);
           return;
         }
 
-        // 1) Objekt
         if (objektId) {
           const { data, error } = await supabase
             .from('byggnad_objekt_skotare')
             .select('skotare_id ( id, fornamn, efternamn, email )')
             .eq('objekt_id', objektId);
+
           if (error) throw error;
-          const list: Skotare[] = (data ?? []).map((r: any) => r.skotare_id).filter(Boolean) ?? [];
+
+          const list: Skotare[] = (data ?? [])
+            .map((r: any) => r.skotare_id)
+            .filter(Boolean);
+
           if (!cancelled) setTillgangligaSkotare(list);
           return;
         }
 
-        // 2) Byggnad
         if (byggnadId) {
           const { data, error } = await supabase
             .from('byggnad_skotare')
             .select('skotare_id ( id, fornamn, efternamn, email )')
             .eq('byggnad_id', byggnadId);
+
           if (error) throw error;
-          const list: Skotare[] = (data ?? []).map((r: any) => r.skotare_id).filter(Boolean) ?? [];
+
+          const list: Skotare[] = (data ?? [])
+            .map((r: any) => r.skotare_id)
+            .filter(Boolean);
+
           if (!cancelled) setTillgangligaSkotare(list);
           return;
         }
 
-        // 3) Fastighet
         if (fastighetId) {
           const { data, error } = await supabase
             .from('fastighet_skotare')
             .select('skotare_id ( id, fornamn, efternamn, email )')
             .eq('fastighet_id', fastighetId);
+
           if (error) throw error;
-          const list: Skotare[] = (data ?? []).map((r: any) => r.skotare_id).filter(Boolean) ?? [];
+
+          const list: Skotare[] = (data ?? [])
+            .map((r: any) => r.skotare_id)
+            .filter(Boolean);
+
           if (!cancelled) setTillgangligaSkotare(list);
           return;
         }
@@ -183,74 +373,109 @@ export function SkapaUnderhall() {
     }
 
     loadAllowedCaretakers();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [fastighetId, byggnadId, objektId]);
 
-  // 🔹 Rensa bort valda skötare som inte längre är tillgängliga när filter ändras
-  useEffect(() => {
-    setValdaSkotare(prev => prev.filter(id => tillgangligaSkotare.some(s => s.id === id)));
-  }, [tillgangligaSkotare]);
+  // Visa både tillgängliga + redan kopplade skötare i edit-läge
+  const synligaSkotare = useMemo(() => {
+    return uniqueSkotare([...tillgangligaSkotare, ...redanValdaSkotareData]);
+  }, [tillgangligaSkotare, redanValdaSkotareData]);
 
-  // Validation
+  // -----------------------------------
+  // Validering
+  // -----------------------------------
   const valideringsFel = useMemo(() => {
     const fel: string[] = [];
-    if (!rubrik.trim()) fel.push('Rubrik är obligatorisk.');
+
     if (!fastighetId) fel.push('Du måste välja en fastighet.');
+    if (!rubrik.trim()) fel.push('Rubrik är obligatorisk.');
+   
     if (klartDatum && planeratDatum && klartDatum < planeratDatum) {
       fel.push('Klart datum kan inte vara före planerat datum.');
     }
+
     if (objektId && !byggnadId) {
       fel.push('Välj byggnad för valt objekt.');
     }
+
     return fel;
   }, [rubrik, fastighetId, planeratDatum, klartDatum, byggnadId, objektId]);
 
-  const kanSpara = valideringsFel.length === 0 && !saving;
+  const kanSpara = valideringsFel.length === 0 && !saving && !loadingInitial;
 
-  // Save
+  // -----------------------------------
+  // Spara / Uppdatera
+  // -----------------------------------
   const handleSave = async () => {
     if (!kanSpara) return;
+
     setSaving(true);
     setError(null);
+
     try {
-      // Skapa underhåll
       const body: any = {
         fastighet_id: fastighetId,
         byggnad_id: byggnadId || null,
+        objekt_id: objektId || null,
         rubrik: rubrik.trim(),
         beskrivning: beskrivning.trim() || null,
-        status, // 'planerat' | 'pågående' | 'klart'
+        status,
         planerat_datum: planeratDatum || null,
         klart_datum: klartDatum || null,
       };
-      if (objektId) body.objekt_id = objektId; // kräver kolumn i DB
 
-      const { data: created, error: insErr } = await supabase
-        .from('underhåll')
-        .insert(body)
-        .select('id')
-        .single();
+      let underhallId = editId;
 
-      if (insErr) throw insErr;
-      const underhallId = (created as any).id as string;
+      if (isEditMode) {
+        const { error: updErr } = await supabase
+          .from('underhåll')
+          .update(body)
+          .eq('id', editId);
 
-      // Knyt skötare
+        if (updErr) throw updErr;
+      } else {
+        const { data: created, error: insErr } = await supabase
+          .from('underhåll')
+          .insert(body)
+          .select('id')
+          .single();
+
+        if (insErr) throw insErr;
+        underhallId = (created as any).id as string;
+      }
+
+      // Synka skötare: ta bort gamla och lägg in nya
+      const { error: deleteLinksErr } = await supabase
+        .from('underhåll_skotare')
+        .delete()
+        .eq('underhåll_id', underhallId);
+
+      if (deleteLinksErr) throw deleteLinksErr;
+
       if (valdaSkotare.length > 0) {
         const rows = valdaSkotare.map((sid) => ({
           underhåll_id: underhallId,
           skotare_id: sid,
         }));
-        const { error: linkErr } = await supabase
+
+        const { error: insertLinksErr } = await supabase
           .from('underhåll_skotare')
           .insert(rows);
-        if (linkErr) throw linkErr;
+
+        if (insertLinksErr) throw insertLinksErr;
       }
 
-      // Navigera tillbaka/lista (justera efter din routing)
-      navigate({
-        pathname: '/dashboard/underhall',
-        search: `?${createSearchParams({ fastighet: fastighetId })}`,
-      });
+      if (isEditMode) {
+        navigate(`/dashboard/underhall/${underhallId}`);
+      } else {
+        navigate({
+          pathname: '/dashboard/underhall',
+          search: `?${createSearchParams({ fastighet: fastighetId })}`,
+        });
+      }
     } catch (e: any) {
       setError(e.message || 'Kunde inte spara underhållsposten.');
     } finally {
@@ -258,17 +483,31 @@ export function SkapaUnderhall() {
     }
   };
 
-  // ---- UI ----
+  if (loadingInitial) {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="h-16 rounded-2xl bg-gray-200 animate-pulse" />
+        <div className="h-96 rounded-2xl bg-gray-100 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
-
       {/* Header */}
       <div className="rounded-2xl border border-gray-300 shadow bg-white px-5 py-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Nytt underhåll</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            {isEditMode ? 'Redigera underhåll' : 'Nytt underhåll'}
+          </h1>
+
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() =>
+                isEditMode
+                  ? navigate(`/dashboard/underhall/${editId}`)
+                  : navigate(-1)
+              }
               className="text-sm bg-gray-200 text-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-300 transition border border-gray-300"
             >
               Avbryt
@@ -279,7 +518,7 @@ export function SkapaUnderhall() {
               disabled={!kanSpara}
               className="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-md hover:bg-blue-800 transition disabled:opacity-40"
             >
-              Spara
+              {saving ? 'Sparar...' : isEditMode ? 'Uppdatera' : 'Spara'}
             </button>
           </div>
         </div>
@@ -301,30 +540,29 @@ export function SkapaUnderhall() {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow border border-gray-300">
-<div className="flex border-b border-gray-300 overflow-x-auto rounded-t-xl">
-  <TabButton
-    active={tab === 'tillhor'}
-    onClick={() => setTab('tillhor')}
-    label="Tillhörighet"
-    first
-  />
-  <TabButton
-    active={tab === 'detaljer'}
-    onClick={() => setTab('detaljer')}
-    label="Detaljer"
-  />
-  <TabButton
-    active={tab === 'skotare'}
-    onClick={() => setTab('skotare')}
-    label="Skötare"
-    last
-  />
-</div>
+        <div className="flex border-b border-gray-300 overflow-x-auto rounded-t-xl">
+          <TabButton
+            active={tab === 'tillhor'}
+            onClick={() => setTab('tillhor')}
+            label="Tillhörighet"
+            first
+          />
+          <TabButton
+            active={tab === 'detaljer'}
+            onClick={() => setTab('detaljer')}
+            label="Detaljer"
+          />
+          <TabButton
+            active={tab === 'skotare'}
+            onClick={() => setTab('skotare')}
+            label="Skötare"
+            last
+          />
+        </div>
 
         {/* DETALJER */}
         {tab === 'detaljer' && (
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-gray-900">
                 Rubrik *
@@ -390,8 +628,6 @@ export function SkapaUnderhall() {
         {/* TILLHÖRIGHET */}
         {tab === 'tillhor' && (
           <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Fastighet */}
             <label className="block text-sm font-semibold text-gray-900">
               Fastighet *
               <select
@@ -400,13 +636,14 @@ export function SkapaUnderhall() {
                 className="mt-1 w-full border border-gray-300 bg-white text-gray-900 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
               >
                 <option value="">Välj fastighet…</option>
-                {fastigheter.map(f => (
-                  <option key={f.id} value={f.id}>{f.namn} — {f.adress}</option>
+                {fastigheter.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.namn} — {f.adress}
+                  </option>
                 ))}
               </select>
             </label>
 
-            {/* Byggnad */}
             <label className="block text-sm font-semibold text-gray-900">
               Byggnad (valfri)
               <select
@@ -416,11 +653,14 @@ export function SkapaUnderhall() {
                 className="mt-1 w-full border border-gray-300 bg-white text-gray-900 rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600 focus:ring-2 focus:ring-blue-400"
               >
                 <option value="">— Ingen byggnad —</option>
-                {byggnader.map(b => <option key={b.id} value={b.id}>{b.namn}</option>)}
+                {byggnader.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.namn}
+                  </option>
+                ))}
               </select>
             </label>
 
-            {/* Objekt */}
             <label className="block text-sm font-semibold text-gray-900">
               Objekt (valfri)
               <select
@@ -430,7 +670,11 @@ export function SkapaUnderhall() {
                 className="mt-1 w-full border border-gray-300 bg-white text-gray-900 rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600 focus:ring-2 focus:ring-blue-400"
               >
                 <option value="">— Inget objekt —</option>
-                {objekt.map(o => <option key={o.id} value={o.id}>{o.namn || o.id}</option>)}
+                {objekt.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.namn || o.id}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
@@ -443,23 +687,22 @@ export function SkapaUnderhall() {
               Välj en eller flera skötare som ska ansvara.
             </p>
 
-            {/* Info när inget är valt */}
             {!fastighetId && (
               <div className="mb-4 rounded border border-gray-300 bg-gray-50 text-gray-800 text-sm p-3">
                 Välj först en <b>Fastighet</b> (och ev. Byggnad/Objekt) under <b>Tillhörighet</b> för att se tillgängliga skötare.
               </div>
             )}
 
-            {/* Info om inga skötare hittas */}
-            {fastighetId && tillgangligaSkotare.length === 0 && (
+            {fastighetId && synligaSkotare.length === 0 && (
               <div className="mb-4 rounded border border-amber-300 bg-amber-50 text-amber-900 text-sm p-3">
                 Inga skötare är kopplade till det aktuella valet. Tilldela skötare till fastighet/byggnad/objekt först.
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tillgangligaSkotare.map(s => {
+              {synligaSkotare.map((s) => {
                 const checked = valdaSkotare.includes(s.id);
+
                 return (
                   <label
                     key={s.id}
@@ -467,7 +710,7 @@ export function SkapaUnderhall() {
                       'rounded-lg border p-4 cursor-pointer flex justify-between items-center shadow-sm',
                       checked
                         ? 'bg-indigo-100 border-indigo-400'
-                        : 'bg-white hover:bg-gray-100 border-gray-300'
+                        : 'bg-white hover:bg-gray-100 border-gray-300',
                     ].join(' ')}
                   >
                     <div>
@@ -481,9 +724,9 @@ export function SkapaUnderhall() {
                       type="checkbox"
                       checked={checked}
                       onChange={() =>
-                        setValdaSkotare(prev =>
+                        setValdaSkotare((prev) =>
                           prev.includes(s.id)
-                            ? prev.filter(x => x !== s.id)
+                            ? prev.filter((x) => x !== s.id)
                             : [...prev, s.id]
                         )
                       }

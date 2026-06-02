@@ -585,7 +585,7 @@ export function ByggnadSkotareForm() {
         <button
           type="submit"
           disabled={loadingInit || !valdByggnad || loadingSave || valdaSkotare.length === 0}
-          className="bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition w-full disabled:opacity-60 cursor-pointer"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1 font-semibold cursor-pointer"
         >
           {loadingSave
             ? 'Sparar...'
@@ -601,7 +601,7 @@ export function ByggnadSkotareForm() {
             type="button"
             onClick={() => navigate(-1)}
             disabled={loadingSave}
-            className="bg-gray-500 text-white px-6 py-2 rounded-md shadow hover:bg-gray-600 transition font-semibold disabled:opacity-60 cursor-pointer"
+            className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold cursor-pointer"
           >
             Avbryt
           </button>

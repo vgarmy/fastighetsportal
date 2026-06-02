@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 type FastighetRow = {
   id: string;
@@ -34,7 +34,9 @@ type KopplingRow = {
 };
 
 export function ObjektSkotareForm() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const fastighetFromQuery = searchParams.get('fastighet') || undefined;
   const byggnadFromQuery = searchParams.get('byggnad') || undefined;
   const objektFromQuery = searchParams.get('objekt') || undefined;
@@ -64,6 +66,8 @@ export function ObjektSkotareForm() {
   const isFastighetLocked = Boolean(initialFastighetPreset);
   const isByggnadLocked = Boolean(initialByggnadPreset);
   const isObjektLocked = Boolean(initialObjektPreset);
+
+  const showCancelButton = isFastighetLocked || isByggnadLocked || isObjektLocked;
 
   const labelFastighet = (f: FastighetRow) => f.namn || f.adress || 'Namnlös fastighet';
   const labelByggnad = (b: ByggnadRow) => b.namn;
@@ -141,7 +145,7 @@ export function ObjektSkotareForm() {
 
         const validByggnadFromPreset =
           initialByggnadPreset &&
-          byggnaderUnderFastighet.some((b) => b.id === initialByggnadPreset)
+            byggnaderUnderFastighet.some((b) => b.id === initialByggnadPreset)
             ? initialByggnadPreset
             : '';
 
@@ -156,7 +160,7 @@ export function ObjektSkotareForm() {
 
         const validObjektFromPreset =
           initialObjektPreset &&
-          objektUnderByggnad.some((o) => o.id === initialObjektPreset)
+            objektUnderByggnad.some((o) => o.id === initialObjektPreset)
             ? initialObjektPreset
             : '';
 
@@ -367,6 +371,16 @@ export function ObjektSkotareForm() {
         <div className="text-center text-gray-600 border border-gray-200 bg-gray-50 rounded-lg p-4">
           Det finns inga fastigheter med byggnader som innehåller objekt ännu.
         </div>
+
+        {showCancelButton && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mt-4 w-full bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition border font-medium"
+          >
+            Avbryt
+          </button>
+        )}
       </div>
     );
   }
@@ -518,13 +532,25 @@ export function ObjektSkotareForm() {
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={loadingInit || !valtObjekt || loadingSave || valdaSkotare.length === 0}
-        className="bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition w-full disabled:opacity-60"
-      >
-        {loadingSave ? 'Sparar...' : overwriteMode ? 'Ersätt skötare' : 'Lägg till skötare'}
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="submit"
+          disabled={loadingInit || !valtObjekt || loadingSave || valdaSkotare.length === 0}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1 font-semibold cursor-pointer"
+        >
+          {loadingSave ? 'Sparar...' : overwriteMode ? 'Ersätt skötare' : 'Lägg till skötare'}
+        </button>
+        {showCancelButton && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            disabled={loadingSave}
+            className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold cursor-pointer"
+          >
+            Avbryt
+          </button>
+        )}
+      </div>
     </form>
   );
 }

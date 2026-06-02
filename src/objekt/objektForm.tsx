@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface ByggnadsObjektFormProps {
   onSaved?: () => void;
@@ -28,9 +28,14 @@ export function ByggnadsObjektForm({
   presetFastighetId,
   presetByggnadId,
 }: ByggnadsObjektFormProps) {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  const objektIdFromQuery = searchParams.get('id') || undefined;
   const fastighetFromQuery = searchParams.get('fastighet') || undefined;
   const byggnadFromQuery = searchParams.get('byggnad') || undefined;
+
+  const isEditMode = Boolean(objektIdFromQuery);
 
   const initialFastighetPreset = presetFastighetId ?? fastighetFromQuery ?? '';
   const initialByggnadPreset = presetByggnadId ?? byggnadFromQuery ?? '';
@@ -54,6 +59,10 @@ export function ByggnadsObjektForm({
 
   const isFastighetLocked = Boolean(initialFastighetPreset);
   const isByggnadLocked = Boolean(initialByggnadPreset);
+
+  const showCancelButton = isEditMode || isFastighetLocked || isByggnadLocked;
+
+  const skipNextAutoSelectRef = useRef(false);
 
   const labelForFastighet = (f?: FastighetOption | null) => {
     if (!f) return 'Namnlös';
@@ -81,7 +90,6 @@ export function ByggnadsObjektForm({
         const allFastigheter = fData ?? [];
         const allByggnader = bData ?? [];
 
-        // Endast fastigheter som har minst en byggnad
         const fastighetIdsMedByggnad = new Set(
           allByggnader
             .map((b) => b.fastighet_id)
@@ -95,38 +103,85 @@ export function ByggnadsObjektForm({
         setFastigheter(filteredFastigheter);
         setByggnader(allByggnader);
 
-        const validInitialFastighet =
-          initialFastighetPreset && fastighetIdsMedByggnad.has(initialFastighetPreset)
-            ? initialFastighetPreset
-            : '';
+        if (isEditMode && objektIdFromQuery) {
+          const { data: objektData, error: objektErr } = await supabase
+            .from('byggnad_objekt')
+            .select(`
+              id,
+              namn,
+              typ,
+              plan,
+              kvadratmeter,
+              beskrivning,
+              byggnad_id,
+              byggnader (
+                id,
+                namn,
+                fastighet_id
+              )
+            `)
+            .eq('id', objektIdFromQuery)
+            .single();
 
-        const chosenFastighetId =
-          validInitialFastighet ||
-          filteredFastigheter[0]?.id ||
-          '';
+          if (objektErr) throw objektErr;
 
-        setFastighetId(chosenFastighetId);
+          const byggRelRaw = objektData?.byggnader ?? null;
+          const byggRel = Array.isArray(byggRelRaw) ? (byggRelRaw[0] ?? null) : byggRelRaw;
 
-        const byggnaderUnderValdFastighet = allByggnader.filter(
-          (b) => b.fastighet_id === chosenFastighetId
-        );
+          const loadedFastighetId = byggRel?.fastighet_id ?? '';
+          const loadedByggnadId = objektData?.byggnad_id ?? '';
 
-        const validInitialByggnad =
-          initialByggnadPreset &&
-          byggnaderUnderValdFastighet.some((b) => b.id === initialByggnadPreset)
-            ? initialByggnadPreset
-            : '';
+          skipNextAutoSelectRef.current = true;
 
-        setByggnadId(validInitialByggnad || byggnaderUnderValdFastighet[0]?.id || '');
+          setFastighetId(loadedFastighetId);
+          setByggnadId(loadedByggnadId);
+          setNamn(objektData?.namn ?? '');
+          setTyp(
+            OBJEKT_TYPER.includes(objektData?.typ as ObjektTyp)
+              ? (objektData.typ as ObjektTyp)
+              : 'annan'
+          );
+          setPlan(objektData?.plan ?? '');
+          setKvadratmeter(
+            objektData?.kvadratmeter !== null && objektData?.kvadratmeter !== undefined
+              ? String(objektData.kvadratmeter)
+              : ''
+          );
+          setBeskrivning(objektData?.beskrivning ?? '');
+        } else {
+          const validInitialFastighet =
+            initialFastighetPreset && fastighetIdsMedByggnad.has(initialFastighetPreset)
+              ? initialFastighetPreset
+              : '';
+
+          const chosenFastighetId =
+            validInitialFastighet ||
+            filteredFastigheter[0]?.id ||
+            '';
+
+          setFastighetId(chosenFastighetId);
+
+          const byggnaderUnderValdFastighet = allByggnader.filter(
+            (b) => b.fastighet_id === chosenFastighetId
+          );
+
+          const validInitialByggnad =
+            initialByggnadPreset &&
+              byggnaderUnderValdFastighet.some((b) => b.id === initialByggnadPreset)
+              ? initialByggnadPreset
+              : '';
+
+          setByggnadId(validInitialByggnad || byggnaderUnderValdFastighet[0]?.id || '');
+        }
       } catch (e: any) {
-        setError(e.message || 'Kunde inte hämta fastigheter/byggnader.');
+        setError(e.message || 'Kunde inte hämta fastigheter/byggnader/objekt.');
       } finally {
         setLoadingInit(false);
       }
     };
 
     load();
-  }, [initialFastighetPreset, initialByggnadPreset]);
+  }, [initialFastighetPreset, initialByggnadPreset, isEditMode, objektIdFromQuery]);
 
   const byggnaderForFastighet = useMemo(
     () => byggnader.filter((b) => b.fastighet_id === fastighetId),
@@ -136,8 +191,17 @@ export function ByggnadsObjektForm({
   useEffect(() => {
     if (loadingInit) return;
 
+    if (skipNextAutoSelectRef.current) {
+      skipNextAutoSelectRef.current = false;
+      return;
+    }
+
     if (!isByggnadLocked) {
-      setByggnadId(byggnaderForFastighet[0]?.id ?? '');
+      setByggnadId((current) => {
+        const existsInCurrentFastighet = byggnaderForFastighet.some((b) => b.id === current);
+        if (existsInCurrentFastighet) return current;
+        return byggnaderForFastighet[0]?.id ?? '';
+      });
     }
 
     setOkMessage(null);
@@ -223,21 +287,40 @@ export function ByggnadsObjektForm({
     }
 
     try {
-      const { error: insertError } = await supabase.from('byggnad_objekt').insert([
-        {
-          byggnad_id: byggnadId,
-          namn: namn.trim(),
-          typ: typ || null,
-          plan: plan.trim() || null,
-          kvadratmeter: kvadratVal,
-          beskrivning: beskrivning.trim() || null,
-        },
-      ]);
+      if (isEditMode && objektIdFromQuery) {
+        const { error: updateError } = await supabase
+          .from('byggnad_objekt')
+          .update({
+            byggnad_id: byggnadId,
+            namn: namn.trim(),
+            typ: typ || null,
+            plan: plan.trim() || null,
+            kvadratmeter: kvadratVal,
+            beskrivning: beskrivning.trim() || null,
+          })
+          .eq('id', objektIdFromQuery);
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
 
-      resetForm();
-      setOkMessage('Byggnadsobjekt sparat!');
+        setOkMessage('Byggnadsobjekt uppdaterat!');
+      } else {
+        const { error: insertError } = await supabase.from('byggnad_objekt').insert([
+          {
+            byggnad_id: byggnadId,
+            namn: namn.trim(),
+            typ: typ || null,
+            plan: plan.trim() || null,
+            kvadratmeter: kvadratVal,
+            beskrivning: beskrivning.trim() || null,
+          },
+        ]);
+
+        if (insertError) throw insertError;
+
+        resetForm();
+        setOkMessage('Byggnadsobjekt sparat!');
+      }
+
       if (onSaved) onSaved();
     } catch (e: any) {
       setError(e.message || 'Ett fel uppstod vid sparande.');
@@ -252,7 +335,9 @@ export function ByggnadsObjektForm({
 
   return (
     <form className="p-6 bg-white rounded-xl shadow-md max-w-lg mx-auto space-y-5">
-      <h2 className="text-lg font-semibold text-gray-900">Byggnadsobjekt</h2>
+      <h2 className="text-lg font-semibold text-gray-900">
+        {isEditMode ? 'Redigera byggnadsobjekt' : 'Byggnadsobjekt'}
+      </h2>
 
       {error && <div className="text-red-600 font-medium text-center">{error}</div>}
       {okMessage && <div className="text-green-700 font-medium text-center">{okMessage}</div>}
@@ -328,11 +413,10 @@ export function ByggnadsObjektForm({
               type="button"
               key={t}
               onClick={() => setTyp(t)}
-              className={`px-3 py-1 rounded-md border ${
-                typ === t
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
-              }`}
+              className={`px-3 py-1 rounded-md border ${typ === t
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
+                }`}
             >
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -372,14 +456,28 @@ export function ByggnadsObjektForm({
         />
       </div>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving || !fastighetId || !byggnadId}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold disabled:opacity-60"
-      >
-        {saving ? 'Sparar...' : 'Spara byggnadsobjekt'}
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !fastighetId || !byggnadId}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold disabled:opacity-60 cursor-pointer"
+        >
+          {saving
+            ? (isEditMode ? 'Uppdaterar...' : 'Sparar...')
+            : (isEditMode ? 'Uppdatera byggnadsobjekt' : 'Spara byggnadsobjekt')}
+        </button>
+        {showCancelButton && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            disabled={saving}
+            className="bg-gray-200 text-gray-900 px-4 py-2 rounded hover:bg-gray-300 font-semibold cursor-pointer"
+          >
+            Avbryt
+          </button>
+        )}
+      </div>
     </form>
   );
 }
