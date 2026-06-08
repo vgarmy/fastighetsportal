@@ -431,29 +431,40 @@ export function VisaByggnader() {
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-[1250px] w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-slate-800 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left px-4 py-5 align-middle">
+                  <th className="text-left px-4 py-4 align-middle w-auto">
                     <SortHeader field="namn">Byggnad</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden lg:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="typ">Typ</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="fastighet">Fastighet</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="våningar">Våningar</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="area">Area (m²)</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="byggår">Byggår</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Ansvariga skötare</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Åtgärder</th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
+                    Ansvariga skötare
+                  </th>
+
+                  <th className="text-left px-4 py-4 align-middle font-semibold text-white w-[150px] sm:w-[190px] md:w-[220px]">
+                    Åtgärder
+                  </th>
                 </tr>
               </thead>
 
@@ -470,42 +481,49 @@ export function VisaByggnader() {
                         }`}
                     >
                       <td className="px-4 py-4 align-middle">
-                        <div className="font-semibold text-gray-900">{b.namn}</div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 break-words">{b.namn}</div>
+
+                          <div className="mt-1 lg:hidden">
+                            {typBadge(b.typ)}
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+
+                      <td className="hidden lg:table-cell px-4 py-4 align-middle">
                         {typBadge(b.typ)}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[260px] truncate" title={fastLabel}>
                           {fastLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {b['våningar'] ?? '-'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {b.area ?? '-'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {b['byggår'] ?? '-'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         <div className="max-w-[260px]">
                           <SkotareBadges list={b.skotare} />
                         </div>
                       </td>
 
                       <td className="px-4 py-4 align-middle">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                           <button
                             onClick={() => navigate(`/dashboard/byggnader/${b.id}`)}
-                            className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer"
+                            className="px-3 py-2 text-xs sm:text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer whitespace-nowrap"
                           >
                             Visa
                           </button>
@@ -514,17 +532,17 @@ export function VisaByggnader() {
                             onClick={() =>
                               navigate(`/dashboard/byggnader/skotarform?fastighet=${b.fastighet_id}&byggnad=${b.id}`)
                             }
-                            className="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-md hover:bg-blue-800 transition cursor-pointer"
+                            className="px-3 py-2 text-xs sm:text-sm bg-blue-700 text-white rounded-md hover:bg-blue-800 transition cursor-pointer whitespace-nowrap"
                           >
-                            Redigera skötare
+                            Skötare
                           </button>
 
                           {fastighetViewId && (
                             <button
                               onClick={() => navigate(`/dashboard/fastigheter/${fastighetViewId}`)}
-                              className="px-3 py-1.5 text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer"
+                              className="hidden md:inline-flex px-3 py-2 text-xs sm:text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer whitespace-nowrap"
                             >
-                              Visa fastighet
+                              Fastighet
                             </button>
                           )}
                         </div>

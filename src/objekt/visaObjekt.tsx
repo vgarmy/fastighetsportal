@@ -132,11 +132,11 @@ export function VisaByggnadsobjekt() {
             byggnad_id: o.byggnad_id,
             byggnader: o.byggnader
               ? {
-                  id: o.byggnader.id,
-                  namn: o.byggnader.namn,
-                  fastighet_id: o.byggnader.fastighet_id,
-                  fastigheter: o.byggnader.fastigheter ?? null,
-                }
+                id: o.byggnader.id,
+                namn: o.byggnader.namn,
+                fastighet_id: o.byggnader.fastighet_id,
+                fastigheter: o.byggnader.fastigheter ?? null,
+              }
               : null,
             skotare:
               (o.byggnad_objekt_skotare ?? [])
@@ -503,30 +503,44 @@ export function VisaByggnadsobjekt() {
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-[1450px] w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-slate-800 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left px-4 py-5 align-middle">
+                  <th className="text-left px-4 py-4 align-middle w-auto">
                     <SortHeader field="namn">Objekt</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden lg:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="typ">Typ</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden lg:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="byggnad">Byggnad</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="fastighet">Fastighet</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="plan">Plan</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="kvadratmeter">Area (m²)</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Beskrivning</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Ansvariga skötare</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Åtgärder</th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Beskrivning
+                  </th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Ansvariga skötare
+                  </th>
+
+                  <th className="text-left px-4 py-4 align-middle font-semibold text-white w-[150px] sm:w-[190px] md:w-[220px]">
+                    Åtgärder
+                  </th>
                 </tr>
               </thead>
 
@@ -550,55 +564,64 @@ export function VisaByggnadsobjekt() {
                   return (
                     <tr
                       key={o.id}
-                      className={`transition hover:bg-slate-200/70 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
-                      }`}
+                      className={`transition hover:bg-slate-200/70 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
+                        }`}
                     >
                       <td className="px-4 py-4 align-middle">
-                        <div className="font-semibold text-gray-900">{objektLabel}</div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 break-words">{objektLabel}</div>
+
+                          <div className="mt-1 lg:hidden">
+                            {typBadge(o.typ)}
+                          </div>
+
+                          <div className="mt-1 text-xs text-gray-500 lg:hidden">
+                            {byggLabel}
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+                      <td className="hidden lg:table-cell px-4 py-4 align-middle">
                         {typBadge(o.typ)}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden lg:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[220px] truncate" title={byggLabel}>
                           {byggLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[220px] truncate" title={fastLabel}>
                           {fastLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {o.plan ?? '-'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {o.kvadratmeter ?? '-'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[320px] truncate" title={o.beskrivning || ''}>
                           {shortDesc}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle">
                         <div className="max-w-[260px]">
                           <SkotareBadges list={o.skotare} />
                         </div>
                       </td>
 
                       <td className="px-4 py-4 align-middle">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                           <button
                             onClick={() => navigate(`/dashboard/objekt/${o.id}`)}
-                            className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer"
+                            className="px-3 py-2 text-xs sm:text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer whitespace-nowrap"
                           >
                             Visa
                           </button>
@@ -609,26 +632,26 @@ export function VisaByggnadsobjekt() {
                                 `../objekt/skotarform?fastighet=${o.byggnader?.fastigheter?.id ?? ''}&byggnad=${byggId ?? ''}&objekt=${o.id}`
                               )
                             }
-                            className="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-md hover:bg-blue-800 transition cursor-pointer"
+                            className="px-3 py-2 text-xs sm:text-sm bg-blue-700 text-white rounded-md hover:bg-blue-800 transition cursor-pointer whitespace-nowrap"
                           >
-                            Tilldela skötare
+                            Skötare
                           </button>
 
                           {byggId && (
                             <button
                               onClick={() => navigate(`/dashboard/byggnader/${byggId}`)}
-                              className="px-3 py-1.5 text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer"
+                              className="hidden md:inline-flex px-3 py-2 text-xs sm:text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer whitespace-nowrap"
                             >
-                              Visa byggnad
+                              Byggnad
                             </button>
                           )}
 
                           {fastId && (
                             <button
                               onClick={() => navigate(`/dashboard/fastigheter/${fastId}`)}
-                              className="px-3 py-1.5 text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer"
+                              className="hidden xl:inline-flex px-3 py-2 text-xs sm:text-sm border border-slate-300 text-slate-700 rounded bg-white hover:bg-slate-50 cursor-pointer whitespace-nowrap"
                             >
-                              Visa fastighet
+                              Fastighet
                             </button>
                           )}
                         </div>

@@ -197,18 +197,18 @@ export function UnderhallLista() {
             const uhId = r.underhall_id ?? r['underhåll_id'];
             const u: Skotare | null = r.user
               ? {
-                  id: r.user.id,
-                  fornamn: r.user.fornamn,
-                  efternamn: r.user.efternamn,
-                  email: r.user.email,
-                }
+                id: r.user.id,
+                fornamn: r.user.fornamn,
+                efternamn: r.user.efternamn,
+                email: r.user.email,
+              }
               : r.skotare
                 ? {
-                    id: r.skotare.id,
-                    fornamn: r.skotare.fornamn,
-                    efternamn: r.skotare.efternamn,
-                    email: r.skotare.email,
-                  }
+                  id: r.skotare.id,
+                  fornamn: r.skotare.fornamn,
+                  efternamn: r.skotare.efternamn,
+                  email: r.skotare.email,
+                }
                 : null;
 
             if (!uhId || !u) return;
@@ -621,28 +621,47 @@ export function UnderhallLista() {
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-[1300px] w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-slate-800 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left px-4 py-5 align-middle">
+                  <th className="text-left px-4 py-4 align-middle w-auto">
                     <SortHeader field="rubrik">Rubrik</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden lg:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="status">Status</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden lg:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="planerat_datum">Planerat</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle">
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle">
                     <SortHeader field="klart_datum">Klart</SortHeader>
                   </th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Fastighet</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Byggnad</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Objekt</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Skötare</th>
-                  <th className="text-left px-4 py-5 align-middle font-semibold text-white">Åtgärder</th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Fastighet
+                  </th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Byggnad
+                  </th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Objekt
+                  </th>
+
+                  <th className="hidden xl:table-cell text-left px-4 py-4 align-middle font-semibold text-white">
+                    Skötare
+                  </th>
+
+                  <th className="text-left px-4 py-4 align-middle font-semibold text-white w-[120px] sm:w-[150px]">
+                    Åtgärder
+                  </th>
                 </tr>
               </thead>
+
 
               <tbody className="divide-y divide-gray-200">
                 {filtered.map((u, index) => {
@@ -653,55 +672,64 @@ export function UnderhallLista() {
                   return (
                     <tr
                       key={u.id}
-                      className={`transition hover:bg-slate-200/70 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
-                      }`}
+                      className={`transition hover:bg-slate-200/70 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-100'
+                        }`}
                     >
                       <td className="px-4 py-4 align-middle">
-                        <div className="font-semibold text-gray-900">{u.rubrik}</div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 break-words">{u.rubrik}</div>
+
+                          <div className="mt-1 lg:hidden">
+                            {statusBadge(u.status)}
+                          </div>
+
+                          <div className="mt-1 text-xs text-gray-500 lg:hidden">
+                            Planerat: {u.planerat_datum ?? '—'}
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+                      <td className="hidden lg:table-cell px-4 py-4 align-middle">
                         {statusBadge(u.status)}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {u.planerat_datum ?? '—'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800 whitespace-nowrap">
                         {u.klart_datum ?? '—'}
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[220px] truncate" title={fastLabel}>
                           {fastLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[180px] truncate" title={byggLabel}>
                           {byggLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle text-gray-800">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle text-gray-800">
                         <div className="max-w-[180px] truncate" title={objektLabel}>
                           {objektLabel}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-middle">
+                      <td className="hidden xl:table-cell px-4 py-4 align-middle">
                         <div className="max-w-[260px]">
                           <SkotareBadges list={u.skotare} />
                         </div>
                       </td>
 
                       <td className="px-4 py-4 align-middle">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center">
                           <button
                             onClick={() => navigate(`/dashboard/underhall/${u.id}`)}
-                            className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer"
+                            className="px-3 py-2 text-xs sm:text-sm border border-blue-300 text-blue-700 rounded bg-white hover:bg-blue-50 cursor-pointer whitespace-nowrap"
                           >
                             Visa
                           </button>
