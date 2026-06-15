@@ -347,33 +347,65 @@ export function ObjektDetaljer() {
           </button>
 
         </div>
-
         {objekt.skotare.length === 0 ? (
-          <p className="text-gray-700">Ingen skötare kopplad ännu.</p>
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
+            <p className="text-sm text-gray-600">Ingen skötare kopplad ännu.</p>
+          </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
             {objekt.skotare.map((s) => (
-              <span
+              <div
                 key={s.id}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold disabled:opacity-60 cursor-pointer"
+                className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:bg-white hover:shadow-sm transition"
               >
-                <button
-                  onClick={() => navigate(`/dashboard/users/${s.id}`)}
-                  className="font-medium hover:underline"
-                  title={`${s.fornamn} ${s.efternamn}${s.email ? ` (${s.email})` : ''}`}
-                >
-                  {s.fornamn} {s.efternamn}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSkotare(s.id)}
-                  disabled={saving}
-                  className="bg-gray-500 text-white px-6 py-2 rounded-md shadow hover:bg-gray-600 transition font-semibold disabled:opacity-60 cursor-pointer"
-                  title="Ta bort"
-                >
-                  ✕
-                </button>
-              </span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  {/* Vänster del */}
+                  <div className="min-w-0 flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold">
+                      {s.fornamn?.[0]}
+                      {s.efternamn?.[0]}
+                    </div>
+
+                    <div className="min-w-0">
+                      <button
+                        onClick={() => navigate(`/dashboard/users/${s.id}`)}
+                        className="block text-left w-full cursor-pointer"
+                        title={`${s.fornamn} ${s.efternamn}${s.email ? ` (${s.email})` : ''}`}
+                      >
+                        <div className="font-semibold text-gray-900 hover:text-blue-700 transition break-words">
+                          {s.fornamn} {s.efternamn}
+                        </div>
+                        {s.email && (
+                          <div className="text-sm text-gray-500 break-all">
+                            {s.email}
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Höger del */}
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/users/${s.id}`)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      Visa
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkotare(s.id)}
+                      disabled={saving}
+                      className="w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-60 cursor-pointer"
+                      title="Ta bort skötare"
+                    >
+                      Ta bort
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -381,4 +413,3 @@ export function ObjektDetaljer() {
     </div>
   );
 }
-``
